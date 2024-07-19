@@ -5,13 +5,59 @@
 <head>
     <meta charset="UTF-8">
     <title>Upload Status</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
 </head>
 <body>
     <h1>Uploaded Files</h1>
-    <ul>
-        {% for upload in uploads %}
-            <li>{{ upload.filename }} - {{ upload.filesize }} bytes - {{ upload.uploaded_at }}</li>
-        {% endfor %}
-    </ul>
+    <table>
+        <thead>
+            <tr>
+                <th>Filename</th>
+                <th>Filesize</th>
+                <th>Uploaded At</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for upload in uploads %}
+                <tr>
+                    <td>{{ upload.filename }}</td>
+                    <td>{{ upload.filesize }} bytes</td>
+                    <td>{{ upload.uploaded_at }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <div class="pagination">
+        <span class="step-links">
+            {% if uploads.has_previous %}
+                <a href="?page=1">&laquo; first</a>
+                <a href="?page={{ uploads.previous_page_number }}">previous</a>
+            {% endif %}
+            
+            <span class="current">
+                Page {{ uploads.number }} of {{ uploads.paginator.num_pages }}.
+            </span>
+            
+            {% if uploads.has_next %}
+                <a href="?page={{ uploads.next_page_number }}">next</a>
+                <a href="?page={{ uploads.paginator.num_pages }}">last &raquo;</a>
+            {% endif %}
+        </span>
+    </div>
 </body>
 </html>

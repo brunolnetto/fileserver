@@ -2,13 +2,90 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>File Upload</title>
+    <title>File Upload Progress</title>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const progressBar = document.getElementById('progress-bar');
+            const fileInput = document.getElementById('file-input');
+            const uploadForm = document.getElementById('upload-form');
+            const uploadButton = document.getElementById('upload-button');
+            const statusMessage = document.getElementById('status-message');
+        
+            uploadForm.addEventListener('submit', function (event) {
+                event.preventDefault();
+                const file = fileInput.files[0];
+                if (!file) {
+                    alert("Please select a file first.");
+                    return;
+                }
+        
+                const formData = new FormData();
+                formData.append('file', file);
+        
+                const xhr = new XMLHttpRequest();
+                xhr.open('POST', '/api/upload/', true);
+                uploadButton.disabled = true;
+                statusMessage.textContent = 'Uploading...';
+        
+                xhr.upload.addEventListener('progress', function (event) {
+                    if (event.lengthComputable) {
+                        const percentComplete = (event.loaded / event.total) * 100;
+                        progressBar.style.width = percentComplete + '%';
+                        progressBar.innerText = percentComplete.toFixed(2) + '%';
+                    }
+                });
+        
+                xhr.onreadystatechange = function () {
+                    if (xhr.readyState === XMLHttpRequest.DONE) {
+                        console.log('Error uploading file.');
+
+                        if (xhr.status === 200) {
+                            console.log(xhr.responseText);
+                            statusMessage.textContent = 'File uploaded successfully.';
+                        } else {
+                            statusMessage.textContent = 'Error uploading file.';
+                        }
+                        uploadButton.disabled = false;
+                    }
+                };
+        
+                xhr.send(formData);
+            });
+        });
+    </script>
+    <style>
+        #progress-container {
+            width: 100%;
+            background-color: #f3f3f3;
+        }
+
+        #progress-bar {
+            width: 0%;
+            height: 30px;
+            background-color: #4caf50;
+            text-align: center;
+            line-height: 30px;
+            color: white;
+        }
+
+        #upload-form {
+            margin: 20px 0;
+        }
+
+        #status-message {
+            margin-top: 10px;
+            font-weight: bold;
+        }
+    </style>
 </head>
 <body>
-    <form method="post" enctype="multipart/form-data">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit">Upload</button>
+    <form id="upload-form">
+        <input type="file" id="file-input" name="file" required>
+        <button type="submit" id="upload-button">Upload</button>
     </form>
+    <div id="progress-container">
+        <div id="progress-bar">0%</div>
+    </div>
+    <div id="status-message"></div>
 </body>
 </html>
