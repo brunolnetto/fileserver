@@ -9,7 +9,7 @@ def upload_view(request):
             return redirect('upload_success')
     else:
         form = UploadForm()
-    return render(request, 'upload.html', {'form': form})
+    return render(request, 'web/upload.html', {'form': form})
 
 def upload_success(request):
-    return render(request, 'upload_success.html')
+    return render(request, 'web/success.html')
