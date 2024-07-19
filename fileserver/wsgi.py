@@ -8,8 +8,12 @@ https://docs.djangoproject.com/en/5.0/howto/deployment/wsgi/
 """
 
 import os
-
 from django.core.wsgi import get_wsgi_application
+from web.routing import websocket_urlpatterns
+
+from channels.routing import ProtocolTypeRouter, URLRouter
+from channels.auth import AuthMiddlewareStack
+
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'fileserver.settings')
 
