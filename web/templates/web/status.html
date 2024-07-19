@@ -1,63 +1,47 @@
 <!-- templates/web/status.html -->
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Upload Status</title>
-    <style>
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        table, th, td {
-            border: 1px solid black;
-        }
-        th, td {
-            padding: 8px;
-            text-align: left;
-        }
-        th {
-            background-color: #f2f2f2;
-        }
-    </style>
-</head>
-<body>
-    <h1>Uploaded Files</h1>
-    <table>
-        <thead>
+{% extends 'web/base.html' %}
+
+{% block title %}Upload Status{% endblock %}
+
+{% block content %}
+<h1>Uploaded Files</h1>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Filename</th>
+            <th>Filesize (bytes)</th>
+            <th>Uploaded At</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for upload in uploads %}
             <tr>
-                <th>Filename</th>
-                <th>Filesize</th>
-                <th>Uploaded At</th>
+                <td>{{ upload.file }}</td>
+                <td>{{ upload.filesize }}</td>
+                <td>{{ upload.uploaded_at }}</td>
             </tr>
-        </thead>
-        <tbody>
-            {% for upload in uploads %}
-                <tr>
-                    <td>{{ upload.filename }}</td>
-                    <td>{{ upload.filesize }} bytes</td>
-                    <td>{{ upload.uploaded_at }}</td>
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    <div class="pagination">
-        <span class="step-links">
-            {% if uploads.has_previous %}
-                <a href="?page=1">&laquo; first</a>
-                <a href="?page={{ uploads.previous_page_number }}">previous</a>
-            {% endif %}
-            
-            <span class="current">
-                Page {{ uploads.number }} of {{ uploads.paginator.num_pages }}.
-            </span>
-            
-            {% if uploads.has_next %}
-                <a href="?page={{ uploads.next_page_number }}">next</a>
-                <a href="?page={{ uploads.paginator.num_pages }}">last &raquo;</a>
-            {% endif %}
-        </span>
-    </div>
-</body>
-</html>
+        {% endfor %}
+    </tbody>
+</table>
+
+<div class="pagination">
+    {% if uploads.has_previous %}
+        <a href="?page=1" class="btn btn-secondary">&laquo; First</a>
+        <a href="?page={{ uploads.previous_page_number }}" class="btn btn-secondary">&lsaquo; Previous</a>
+    {% endif %}
+
+    {% for page_num in uploads.paginator.page_range %}
+        {% if uploads.number == page_num %}
+            <a href="?page={{ page_num }}" class="btn btn-primary">{{ page_num }}</a>
+        {% else %}
+            <a href="?page={{ page_num }}" class="btn btn-secondary">{{ page_num }}</a>
+        {% endif %}
+    {% endfor %}
+
+    {% if uploads.has_next %}
+        <a href="?page={{ uploads.next_page_number }}" class="btn btn-secondary">Next &rsaquo;</a>
+        <a href="?page={{ uploads.paginator.num_pages }}" class="btn btn-secondary">Last &raquo;</a>
+    {% endif %}
+</div>
+{% endblock %}

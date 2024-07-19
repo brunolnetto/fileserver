@@ -1,91 +1,64 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>File Upload Progress</title>
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const progressBar = document.getElementById('progress-bar');
-            const fileInput = document.getElementById('file-input');
-            const uploadForm = document.getElementById('upload-form');
-            const uploadButton = document.getElementById('upload-button');
-            const statusMessage = document.getElementById('status-message');
+<!-- templates/web/upload.html -->
+
+{% extends 'web/base.html' %}
+
+{% block title %}File Upload{% endblock %}
+
+{% block content %}
+<h1>File Upload</h1>
+<form id="upload-form">
+    <input type="file" id="file-input" name="file" required>
+    <button type="submit" class="btn btn-primary">Upload</button>
+</form>
+<div id="progress-container" class="progress mt-3">
+    <div id="progress-bar" class="progress-bar" role="progressbar" style="width: 0%;">0%</div>
+</div>
+<p id="status-message"></p>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const progressBar = document.getElementById('progress-bar');
+        const fileInput = document.getElementById('file-input');
+        const uploadForm = document.getElementById('upload-form');
+        const statusMessage = document.getElementById('status-message');
+        const uploadButton = uploadForm.querySelector('button[type="submit"]');
         
-            uploadForm.addEventListener('submit', function (event) {
-                event.preventDefault();
-                const file = fileInput.files[0];
-                if (!file) {
-                    alert("Please select a file first.");
-                    return;
+        uploadForm.addEventListener('submit', function (event) {
+            event.preventDefault();
+            const file = fileInput.files[0];
+            if (!file) {
+                alert("Please select a file first.");
+                return;
+            }
+        
+            const formData = new FormData();
+            formData.append('file', file);
+        
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '{% url "file_upload" %}', true);
+        
+            xhr.upload.addEventListener('progress', function (event) {
+                if (event.lengthComputable) {
+                    const percentComplete = (event.loaded / event.total) * 100;
+                    progressBar.style.width = percentComplete + '%';
+                    progressBar.innerText = percentComplete.toFixed(2) + '%';
                 }
-        
-                const formData = new FormData();
-                formData.append('file', file);
-        
-                const xhr = new XMLHttpRequest();
-                xhr.open('POST', '/api/upload/', true);
-                uploadButton.disabled = true;
-                statusMessage.textContent = 'Uploading...';
-        
-                xhr.upload.addEventListener('progress', function (event) {
-                    if (event.lengthComputable) {
-                        const percentComplete = (event.loaded / event.total) * 100;
-                        progressBar.style.width = percentComplete + '%';
-                        progressBar.innerText = percentComplete.toFixed(2) + '%';
-                    }
-                });
-        
-                xhr.onreadystatechange = function () {
-                    if (xhr.readyState === XMLHttpRequest.DONE) {
-                        console.log('Error uploading file.');
-
-                        if (xhr.status === 200) {
-                            console.log(xhr.responseText);
-                            statusMessage.textContent = 'File uploaded successfully.';
-                        } else {
-                            statusMessage.textContent = 'Error uploading file.';
-                        }
-                        uploadButton.disabled = false;
-                    }
-                };
-        
-                xhr.send(formData);
             });
+        
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    if (xhr.status === 200) {
+                        statusMessage.textContent = 'File uploaded successfully.';
+                    } else {
+                        statusMessage.textContent = 'Error uploading file.';
+                    }
+                    uploadButton.disabled = false;
+                }
+            };
+        
+            xhr.send(formData);
+            uploadButton.disabled = true;
+            statusMessage.textContent = 'Uploading...';
         });
-    </script>
-    <style>
-        #progress-container {
-            width: 100%;
-            background-color: #f3f3f3;
-        }
-
-        #progress-bar {
-            width: 0%;
-            height: 30px;
-            background-color: #4caf50;
-            text-align: center;
-            line-height: 30px;
-            color: white;
-        }
-
-        #upload-form {
-            margin: 20px 0;
-        }
-
-        #status-message {
-            margin-top: 10px;
-            font-weight: bold;
-        }
-    </style>
-</head>
-<body>
-    <form id="upload-form">
-        <input type="file" id="file-input" name="file" required>
-        <button type="submit" id="upload-button">Upload</button>
-    </form>
-    <div id="progress-container">
-        <div id="progress-bar">0%</div>
-    </div>
-    <div id="status-message"></div>
-</body>
-</html>
+    });
+</script>
+{% endblock %}
