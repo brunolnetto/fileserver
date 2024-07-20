@@ -33,8 +33,8 @@ SECRET_KEY = environ.get('SECRET_KEY', 'secret_key')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = environ.get('DEBUG', True)
 
-CELERY_BROKER_URL = environ.get('CELERY_BROKER_URL', 'redis://localhost:6379/0')
-CELERY_RESULT_BACKEND = environ.get('CELERY_BROKER_URL', 'redis://localhost:6379/0')
+CELERY_BROKER_URL = environ.get('CELERY_BROKER_URL', 'redis://celery:6379/0')
+CELERY_RESULT_BACKEND = environ.get('CELERY_BROKER_URL', 'redis://celery:6379/0')
 CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
 
 # Add this setting to ensure retries on startup
@@ -47,7 +47,7 @@ ALLOWED_HOSTS = []
 
 # Add the Redis channel layer for Django Channels if needed
 REDIS_HOST=environ.get('REDIS_HOST', 'localhost')
-REDIS_PORT=environ.get('REDIS_POR', 6379)
+REDIS_PORT=environ.get('REDIS_PORT', 6379)
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
