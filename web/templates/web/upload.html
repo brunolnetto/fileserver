@@ -42,7 +42,7 @@
             }
 
             const xhr = new XMLHttpRequest();
-            xhr.open('POST', '{% url "upload_base" %}', true);
+            xhr.open('POST', '{% url "upload_files" %}', true);
             xhr.setRequestHeader('X-CSRFToken', csrftoken);
 
             xhr.upload.addEventListener('progress', function(event) {

@@ -5,39 +5,41 @@
 {% block content %}
 <h1 class="mb-4">Uploaded Files</h1>
 
-{% if uploads %}
-<form id="delete-form">
-    {% csrf_token %}
-    <button type="button" class="custom-button">
-        <i class="bi bi-trash"></i> <!-- Bin icon -->
-        <!-- Optional text if needed -->
-        <span class="ml-2">Delete</span>
-    </button>
-    
-    <table class="table table-striped" id="upload-table">
-        <thead>
-            <tr>
-                <th><input type="checkbox" id="select-all"></th>
-                <th data-column="filename" data-type="text">Filename</th>
-                <th data-column="filesize" data-type="number">Filesize (KB)</th>
-                <th data-column="uploaded_at" data-type="text">Uploaded At</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for upload in uploads %}
-                <tr data-file-id="{{ upload.id }}">
-                    <td><input type="checkbox" class="file-select" data-file-id="{{ upload.id }}"></td>
-                    <td>{{ upload.file }}</td>
-                    <td>{{ upload.filesize_kb|floatformat:2 }}</td>
-                    <td>{{ upload.uploaded_at }}</td>
+<div id="file-content">
+    {% if uploads %}
+    <form id="delete-form">
+        {% csrf_token %}
+        <button type="button" class="custom-button">
+            <i class="bi bi-trash"></i>
+            <span class="ml-2">Delete</span>
+        </button>
+        
+        <table class="table table-striped" id="upload-table">
+            <thead>
+                <tr>
+                    <th><input type="checkbox" id="select-all"></th>
+                    <th data-column="filename" data-type="text">Filename</th>
+                    <th data-column="filesize" data-type="number">Filesize (KB)</th>
+                    <th data-column="uploaded_at" data-type="text">Uploaded At</th>
                 </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</form>
-{% else %}
+            </thead>
+            <tbody>
+                {% for upload in uploads %}
+                    <tr data-file-id="{{ upload.id }}">
+                        <td><input type="checkbox" class="file-select" data-file-id="{{ upload.id }}"></td>
+                        <td>{{ upload.file }}</td>
+                        <td>{{ upload.filesize_kb|floatformat:2 }}</td>
+                        <td>{{ upload.uploaded_at }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </form>
+    {% else %}
     <p class="text-center">No files uploaded yet.</p>
-{% endif %}
+    {% endif %}
+</div>
+
 
 <div class="pagination-container mt-3">
     <nav aria-label="Page navigation">
@@ -129,7 +131,16 @@
 document.addEventListener('DOMContentLoaded', function() {
     const table = document.getElementById('upload-table');
     const deleteButton = document.querySelector('.custom-button');
+    const selectAllCheckbox = document.getElementById('select-all');
+    const fileSelectCheckboxes = table.querySelectorAll('.file-select');
     const csrfToken = document.querySelector('input[name="csrfmiddlewaretoken"]').value;
+
+    // Handle select all checkbox
+    selectAllCheckbox.addEventListener('change', function() {
+        fileSelectCheckboxes.forEach(checkbox => {
+            checkbox.checked = this.checked;
+        });
+    });
 
     // Handle delete selected button
     deleteButton.addEventListener('click', function() {
@@ -166,7 +177,39 @@ document.addEventListener('DOMContentLoaded', function() {
             };
 
             xhr.send(JSON.stringify({ ids: fileIds }));
-        }
+        }   
+    });
+
+    const headers = table.querySelectorAll('thead th');
+    let sortDirection = {};
+
+    headers.forEach(header => {
+        header.addEventListener('click', function() {
+            const column = this.getAttribute('data-column');
+            const type = this.getAttribute('data-type');
+            const rows = Array.from(table.querySelectorAll('tbody tr'));
+            const columnIndex = Array.from(headers).indexOf(this);
+            const direction = sortDirection[column] === 'asc' ? 'desc' : 'asc';
+            sortDirection[column] = direction;
+
+            rows.sort((rowA, rowB) => {
+                const cellA = rowA.children[columnIndex].innerText.trim();
+                const cellB = rowB.children[columnIndex].innerText.trim();
+
+                if (type === 'number') {
+                    return direction === 'asc' 
+                        ? parseFloat(cellA) - parseFloat(cellB) 
+                        : parseFloat(cellB) - parseFloat(cellA);
+                } else {
+                    return direction === 'asc'
+                        ? cellA.localeCompare(cellB)
+                        : cellB.localeCompare(cellA);
+                }
+            });
+
+            const tbody = table.querySelector('tbody');
+            rows.forEach(row => tbody.appendChild(row));
+        });
     });
 });
 </script>

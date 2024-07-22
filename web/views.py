@@ -73,3 +73,15 @@ def upload_status(request):
     uploads = paginator.get_page(page_number)
 
     return render(request, 'web/status.html', {'uploads': uploads})
+
+def custom_bad_request(request, exception=None):
+    return render(request, 'web/status_code/400.html', status=400)
+
+def custom_permission_denied(request, exception=None):
+    return render(request, 'web/status_code/403.html', status=403)
+
+def custom_page_not_found(request, exception=None):
+    return render(request, 'web/status_code/404.html', status=404)
+
+def custom_server_error(request):
+    return render(request, 'web/status_code/500.html', status=500)
