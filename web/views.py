@@ -3,6 +3,9 @@ from django.shortcuts import render, redirect
 from django.core.paginator import Paginator
 from django.views.decorators.csrf import csrf_protect, csrf_exempt
 from django.http import JsonResponse
+from django.conf import settings
+import json
+import os
 
 from .forms import UploadForm
 from .models import Upload
@@ -10,27 +13,46 @@ from .models import Upload
 def home_view(request):
     return render(request, 'web/home.html')
 
-@csrf_protect
-def upload_view(request):
+@csrf_exempt
+def upload_files(request):
     if request.method == 'POST':
-        form = UploadForm(request.POST, request.FILES)
-        if form.is_valid():
-            form.save()
-            return redirect('upload_success')
-    else:
-        form = UploadForm()
-    return render(request, 'web/upload.html', {'form': form})
+        files = request.FILES.getlist('files')
+        if not files:
+            print('No files uploaded.')
+            return JsonResponse({'status': 'error', 'message': 'No files uploaded'}, status=400)
+
+        for file in files:
+            upload = Upload(file=file)
+            upload.save()
+
+        print('Files uploaded successfully.')
+        return JsonResponse({'status': 'success'})
+
+    # Render the upload page for GET request
+    return render(request, 'web/upload.html')
 
 @csrf_protect
 def delete_selected_uploads(request):
     if request.method == 'POST':
-        import json
         data = json.loads(request.body)
+        
         file_ids = data.get('ids', [])
+
         if not isinstance(file_ids, list):
             return JsonResponse({'status': 'error', 'message': 'Invalid data'}, status=400)
-        deleted_count = Upload.objects.filter(id__in=file_ids).delete()[0]
+
+        uploads_to_delete = Upload.objects.filter(id__in=file_ids)
+        deleted_count = uploads_to_delete.count()
+
+        for upload in uploads_to_delete:
+            file_path = os.path.join(settings.MEDIA_ROOT, upload.file.name)
+            if os.path.isfile(file_path):
+                os.remove(file_path)
+
+        uploads_to_delete.delete()
+
         return JsonResponse({'status': 'success', 'deleted_count': deleted_count})
+    
     return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=400)
 
 def upload_success(request):

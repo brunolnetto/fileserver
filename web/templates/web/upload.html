@@ -7,8 +7,8 @@
 <form id="upload-form">
     {% csrf_token %}
     <div class="form-group">
-        <label for="file-input">Choose a file:</label>
-        <input type="file" id="file-input" name="file" required class="form-control-file">
+        <label for="file-input">Choose files:</label>
+        <input type="file" id="file-input" name="files" multiple required class="form-control-file">
     </div>
     <button type="submit" class="btn btn-primary">Upload</button>
     <button type="button" id="reset-button" class="btn btn-secondary ml-2">Reset</button>
@@ -21,68 +21,63 @@
 <p id="status-message" class="mt-2"></p>
 
 <script>
-    const csrftoken = document.querySelector('input[name="csrfmiddlewaretoken"]').value;
-
-    document.addEventListener('DOMContentLoaded', function () {
-        const progressBar = document.getElementById('progress-bar');
-        const fileInput = document.getElementById('file-input');
+    document.addEventListener('DOMContentLoaded', function() {
         const uploadForm = document.getElementById('upload-form');
+        const fileInput = document.getElementById('file-input');
+        const progressBar = document.getElementById('progress-bar');
         const statusMessage = document.getElementById('status-message');
-        const uploadButton = uploadForm.querySelector('button[type="submit"]');
-        const resetButton = document.getElementById('reset-button');
+        const csrftoken = document.querySelector('input[name="csrfmiddlewaretoken"]').value;
 
-        uploadForm.addEventListener('submit', function (event) {
+        uploadForm.addEventListener('submit', function(event) {
             event.preventDefault();
-            const file = fileInput.files[0];
-            if (!file) {
-                statusMessage.textContent = "Please select a file first.";
-                statusMessage.classList.add('text-danger');
+            const files = fileInput.files;
+            if (files.length === 0) {
+                alert('Please select files to upload.');
                 return;
             }
-        
+
             const formData = new FormData();
-            formData.append('file', file);
-        
+            for (let i = 0; i < files.length; i++) {
+                formData.append('files', files[i]);
+            }
+
             const xhr = new XMLHttpRequest();
             xhr.open('POST', '{% url "upload_base" %}', true);
             xhr.setRequestHeader('X-CSRFToken', csrftoken);
 
-            xhr.upload.addEventListener('progress', function (event) {
+            xhr.upload.addEventListener('progress', function(event) {
                 if (event.lengthComputable) {
                     const percentComplete = (event.loaded / event.total) * 100;
                     progressBar.style.width = percentComplete + '%';
-                    progressBar.innerText = percentComplete.toFixed(2) + '%';
+                    progressBar.textContent = Math.round(percentComplete) + '%';
                 }
             });
-        
-            xhr.onreadystatechange = function () {
-                if (xhr.readyState === XMLHttpRequest.DONE) {
-                    if (xhr.status === 200) {
-                        statusMessage.textContent = 'File uploaded successfully.';
-                        statusMessage.classList.remove('text-danger');
-                        statusMessage.classList.add('text-success');
-                    } else {
-                        statusMessage.textContent = 'Error uploading file. Please try again.';
-                        statusMessage.classList.remove('text-success');
-                        statusMessage.classList.add('text-danger');
-                    }
-                    uploadButton.disabled = false;
+
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    statusMessage.textContent = 'Files uploaded successfully.';
+                    progressBar.style.width = '0%';
+                    progressBar.textContent = '0%';
+                    uploadForm.reset();
+                } else {
+                    statusMessage.textContent = 'Error uploading files. Status: ' + xhr.status;
+                    console.error('Error:', xhr.responseText);
                 }
             };
 
+            xhr.onerror = function() {
+                statusMessage.textContent = 'Error uploading files.';
+                console.error('Network Error');
+            };
+
             xhr.send(formData);
-            uploadButton.disabled = true;
-            statusMessage.textContent = 'Uploading...';
-            statusMessage.classList.remove('text-success', 'text-danger');
         });
 
-        // Reset button functionality
-        resetButton.addEventListener('click', function () {
-            fileInput.value = ''; // Clear the file input
+        document.getElementById('reset-button').addEventListener('click', function() {
+            uploadForm.reset();
             progressBar.style.width = '0%';
-            progressBar.innerText = '0%';
+            progressBar.textContent = '0%';
             statusMessage.textContent = '';
-            statusMessage.classList.remove('text-success', 'text-danger');
         });
     });
 </script>

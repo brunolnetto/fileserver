@@ -6,8 +6,10 @@
 <h1 class="mb-4">Uploaded Files</h1>
 
 {% if uploads %}
-<button class="custom-button">
-    <i class="bi bi-trash"></i> <!-- Bin icon -->
+<form id="delete-form">
+    {% csrf_token %}
+    <button type="button" class="custom-button">
+        <i class="bi bi-trash"></i> <!-- Bin icon -->
         <!-- Optional text if needed -->
         <span class="ml-2">Delete</span>
     </button>
@@ -32,6 +34,7 @@
             {% endfor %}
         </tbody>
     </table>
+</form>
 {% else %}
     <p class="text-center">No files uploaded yet.</p>
 {% endif %}
@@ -125,50 +128,8 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const table = document.getElementById('upload-table');
-    const headers = table.querySelectorAll('thead th');
-    const deleteButton = document.getElementById('delete-selected');
-    const selectAllCheckbox = document.getElementById('select-all');
-    const csrfTokenInput = document.querySelector('input[name="csrfmiddlewaretoken"]');
-    const csrfToken = csrfTokenInput ? csrfTokenInput.value : '';
-
-    let sortDirection = {};
-
-    headers.forEach(header => {
-        header.addEventListener('click', function() {
-            const column = this.getAttribute('data-column');
-            const type = this.getAttribute('data-type');
-            const tbody = table.querySelector('tbody');
-            const rows = Array.from(tbody.querySelectorAll('tr'));
-            const columnIndex = Array.from(headers).indexOf(this);
-            const direction = sortDirection[column] === 'asc' ? 'desc' : 'asc';
-            sortDirection[column] = direction;
-
-            rows.sort((rowA, rowB) => {
-                const cellA = rowA.children[columnIndex + 1].innerText.trim(); // +1 to skip checkbox
-                const cellB = rowB.children[columnIndex + 1].innerText.trim();
-
-                if (type === 'number') {
-                    return direction === 'asc' 
-                        ? parseFloat(cellA) - parseFloat(cellB) 
-                        : parseFloat(cellB) - parseFloat(cellA);
-                } else {
-                    return direction === 'asc'
-                        ? cellA.localeCompare(cellB)
-                        : cellB.localeCompare(cellA);
-                }
-            });
-
-            // Clear the table body and append sorted rows
-            tbody.innerHTML = '';
-            rows.forEach(row => tbody.appendChild(row));
-        });
-    });
-
-    // Handle select all checkbox
-    selectAllCheckbox.addEventListener('change', function() {
-        const checkboxes = table.querySelectorAll('.file-select');
-        checkboxes.forEach(checkbox => checkbox.checked = this.checked);
-    });
+    const deleteButton = document.querySelector('.custom-button');
+    const csrfToken = document.querySelector('input[name="csrfmiddlewaretoken"]').value;
 
     // Handle delete selected button
     deleteButton.addEventListener('click', function() {
@@ -182,12 +143,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (confirm('Are you sure you want to delete the selected files?')) {
             const xhr = new XMLHttpRequest();
-            xhr.open('POST', '{% url "delete_selected_uploads" %}', true);
+            const deleteUrl = "{% url 'delete_selected_uploads' %}";
+
+            xhr.open('POST', deleteUrl, true);
             xhr.setRequestHeader('X-CSRFToken', csrfToken);
             xhr.setRequestHeader('Content-Type', 'application/json;charset=UTF-8');
 
             xhr.onreadystatechange = function() {
                 if (xhr.readyState === XMLHttpRequest.DONE) {
+                    console.log('Response Status:', xhr.status);
+                    console.log('Response Text:', xhr.responseText);
                     if (xhr.status === 200) {
                         // Remove deleted rows from the table
                         selectedCheckboxes.forEach(checkbox => {
