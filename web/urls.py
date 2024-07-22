@@ -3,7 +3,8 @@ from django.conf.urls import handler400, handler403, handler404, handler500
 from django.http import HttpResponseNotFound
 
 from .views import (
-    home_view, upload_files, upload_success, delete_selected_uploads, upload_status,
+    home_view, 
+    upload_files, update_uploads, upload_success, upload_status, delete_selected_uploads,
 )
 from django.conf.urls import handler400, handler403, handler404, handler500
 
@@ -16,8 +17,8 @@ urlpatterns = [
     path('', home_view, name='home'), 
     path('upload/', upload_files, name='upload_files'),
     path('delete-selected-uploads/', delete_selected_uploads, name='delete_selected_uploads'),
+    path('update-uploads/', update_uploads, name='update_uploads'),
     path('success/', upload_success, name='upload_success'),
-    path('status/', upload_status, name='upload_status'),
-    path('simulate-404/', lambda request: HttpResponseNotFound("This page does not exist.")),
+    path('status/', upload_status, name='upload_status')
 ]
 

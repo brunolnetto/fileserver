@@ -5,6 +5,8 @@
 {% block content %}
 <h1 class="mb-4">Uploaded Files</h1>
 
+
+
 <div id="file-content">
     {% if uploads %}
     <form id="delete-form">
@@ -18,22 +20,27 @@
             <thead>
                 <tr>
                     <th><input type="checkbox" id="select-all"></th>
-                    <th data-column="filename" data-type="text">Filename</th>
-                    <th data-column="filesize" data-type="number">Filesize (KB)</th>
-                    <th data-column="uploaded_at" data-type="text">Uploaded At</th>
+                    <th>Filename</th>
+                    <th>Filesize (KB)</th>
+                    <th>Uploaded At</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
                 {% for upload in uploads %}
                     <tr data-file-id="{{ upload.id }}">
                         <td><input type="checkbox" class="file-select" data-file-id="{{ upload.id }}"></td>
-                        <td>{{ upload.file }}</td>
-                        <td>{{ upload.filesize_kb|floatformat:2 }}</td>
+                        <td class="editable">{{ upload.file }}</td>
+                        <td class="editable text-right">{{ upload.filesize_kb|floatformat:2 }}</td>
                         <td>{{ upload.uploaded_at }}</td>
+                        <td>
+                            <button type="button" class="btn btn-primary btn-edit">Edit</button>
+                        </td>
                     </tr>
                 {% endfor %}
             </tbody>
         </table>
+        <button type="button" id="save-button" class="btn btn-success">Save Changes</button>
     </form>
     {% else %}
     <p class="text-center">No files uploaded yet.</p>
@@ -134,6 +141,67 @@ document.addEventListener('DOMContentLoaded', function() {
     const selectAllCheckbox = document.getElementById('select-all');
     const fileSelectCheckboxes = table.querySelectorAll('.file-select');
     const csrfToken = document.querySelector('input[name="csrfmiddlewaretoken"]').value;
+    
+    const editButtons = document.querySelectorAll('.btn-edit');
+    const saveButton = document.getElementById('save-button');
+    
+    editButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const row = this.closest('tr');
+            const cells = row.querySelectorAll('.editable');
+            
+            cells.forEach(cell => {
+                if (cell.isContentEditable) {
+                    cell.contentEditable = false;
+                    cell.classList.remove('editable-mode');
+                } else {
+                    cell.contentEditable = true;
+                    cell.classList.add('editable-mode');
+                }
+            });
+            
+            this.textContent = this.textContent === 'Edit' ? 'Save' : 'Edit';
+        });
+    });
+
+    saveButton.addEventListener('click', function() {
+        const rows = document.querySelectorAll('#upload-table tbody tr');
+        const updatedData = [];
+
+        rows.forEach(row => {
+            const cells = row.querySelectorAll('.editable');
+            const fileId = row.getAttribute('data-file-id');
+
+            if (fileId) {
+                const fileData = {
+                    id: fileId,
+                    file: cells[0].textContent.trim(),
+                    filesize_kb: parseFloat(cells[1].textContent.trim())
+                };
+                updatedData.push(fileData);
+            }
+        });
+
+        const xhr = new XMLHttpRequest();
+        const updateUrl = "{% url 'update_uploads' %}";
+
+        xhr.open('POST', updateUrl, true);
+        xhr.setRequestHeader('X-CSRFToken', document.querySelector('input[name="csrfmiddlewaretoken"]').value);
+        xhr.setRequestHeader('Content-Type', 'application/json;charset=UTF-8');
+
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === XMLHttpRequest.DONE) {
+                if (xhr.status === 200) {
+                    alert('Changes saved successfully.');
+                } else {
+                    alert('Error saving changes.');
+                }
+            }
+        };
+
+        xhr.send(JSON.stringify({ updates: updatedData }));
+    });
+
 
     // Handle select all checkbox
     selectAllCheckbox.addEventListener('change', function() {

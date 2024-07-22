@@ -1,6 +1,7 @@
 # views.py
 from django.shortcuts import render, redirect
 from django.core.paginator import Paginator
+from django.shortcuts import get_object_or_404
 from django.views.decorators.csrf import csrf_protect, csrf_exempt
 from django.http import JsonResponse
 from django.conf import settings
@@ -13,15 +14,35 @@ from .models import Upload
 def home_view(request):
     return render(request, 'web/home.html')
 
+def handle_uploaded_file(f):
+    # Save the file
+    file_path = os.path.join('uploads', f.name)
+    with open(file_path, 'wb+') as destination:
+        for chunk in f.chunks():
+            destination.write(chunk)
+    return file_path
+
+def validate_file_type(filename):
+    valid_extensions = ['.csv', '.xlsx', '.xls']
+    ext = os.path.splitext(filename)[1].lower()
+    return ext in valid_extensions
+
 @csrf_exempt
 def upload_files(request):
     if request.method == 'POST':
         files = request.FILES.getlist('files')
+        
         if not files:
             print('No files uploaded.')
             return JsonResponse({'status': 'error', 'message': 'No files uploaded'}, status=400)
 
+        # Iterate over each file and process it
         for file in files:
+            # Validate file type
+            if not validate_file_type(file.name):
+                return JsonResponse({'status': 'error', 'message': f'Invalid file type: {file.name}'}, status=400)
+
+            # Save the file (assuming Upload model has a `file` field)
             upload = Upload(file=file)
             upload.save()
 
@@ -31,11 +52,41 @@ def upload_files(request):
     # Render the upload page for GET request
     return render(request, 'web/upload.html')
 
+@csrf_exempt
+def update_uploads(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            updates = data.get('updates', [])
+
+            for item in updates:
+                upload_id = item.get('id')
+                file = item.get('file')
+                filesize_kb = item.get('filesize_kb')
+
+                if not all([upload_id, file, filesize_kb is not None]):
+                    return JsonResponse({'status': 'error', 'message': 'Missing data'}, status=400)
+
+                upload = Upload.objects.get(id=upload_id)
+                upload.file = file
+                upload.filesize_kb = filesize_kb
+                upload.save()
+
+            return JsonResponse({'status': 'success'})
+        except json.JSONDecodeError:
+            return JsonResponse({'status': 'error', 'message': 'Invalid JSON'}, status=400)
+        except Upload.DoesNotExist:
+            return JsonResponse({'status': 'error', 'message': 'Upload not found'}, status=404)
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=400)
+
 @csrf_protect
 def delete_selected_uploads(request):
     if request.method == 'POST':
         data = json.loads(request.body)
-        
+
         file_ids = data.get('ids', [])
 
         if not isinstance(file_ids, list):
@@ -85,3 +136,4 @@ def custom_page_not_found(request, exception=None):
 
 def custom_server_error(request):
     return render(request, 'web/status_code/500.html', status=500)
+
