@@ -55,7 +55,7 @@ services:
       - redis
 
   flower:
-    image: mher/flower:2.0.1
+    image: mher/flower:latest
     command: ['flower', '--broker=redis://redis:6379', '--port=5555']
     ports:
       - "5555:5555"

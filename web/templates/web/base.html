@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}My Django App{% endblock %}</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.5/font/bootstrap-icons.min.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+        .sidebar-container {
+            display: flex;
+            height: 100vh;
+            position: relative;
+        }
+        .sidebar {
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 250px;
+            background-color: #f8f9fa;
+            padding-top: 20px;
+            transition: width 0.3s ease, padding 0.3s ease;
+            overflow: hidden;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-sizing: border-box;
+        }
+        .custom-button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+            background-color: #007bff; /* Example background color */
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .custom-button:hover {
+            background-color: #0056b3; /* Darker color on hover */
+        }
+        .sidebar.collapsed {
+            width: 80px;
+        }
+        .sidebar a {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+            width: 100%;
+            box-sizing: border-box;
+            text-decoration: none;
+            color: #333;
+            transition: background-color 0.3s ease;
+        }
+        .sidebar a i {
+            font-size: 24px;
+            transition: opacity 0.3s ease;
+        }
+        .sidebar a span {
+            margin-left: 10px;
+            display: inline;
+            opacity: 1;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        .sidebar.collapsed a span {
+            opacity: 0;
+            visibility: hidden;
+        }
+        .sidebar.collapsed .other-icons a {
+            display: none; /* Hide all links except for home */
+        }
+        .sidebar.collapsed .home-button {
+            display: flex; /* Ensure home button is always visible */
+        }
+        .sidebar a:hover {
+            background-color: #ddd;
+        }
+        .content {
+            margin-left: 250px;
+            padding: 20px;
+            transition: margin-left 0.3s ease, width 0.3s ease;
+            width: calc(100% - 250px);
+        }
+        .content.expanded {
+            margin-left: 80px;
+            width: calc(100% - 80px);
+        }
+        .home-button {
+            width: 100%;
+            text-align: center;
+        }
+        .home-button a {
+            display: block;
+            padding: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar-container">
+        <nav id="sidebar" class="sidebar collapsed">
+            <div class="home-button">
+                <a href="{% url 'home' %}"><i class="bi bi-house-door"></i></a>
+            </div>
+            <div class="other-icons">
+                <a href="{% url 'upload_base' %}">
+                    <i class="bi bi-upload"></i><span>Upload File</span>
+                </a>
+                <a href="{% url 'upload_status' %}">
+                    <i class="bi bi-file-earmark-text"></i><span>File Status</span>
+                </a>
+                <!-- Add more links with icons as needed -->
+            </div>
+        </nav>
+        <div id="content" class="content">
+            {% block content %}
+            {% endblock %}
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var sidebarContainer = document.querySelector('.sidebar-container');
+            var sidebar = document.getElementById('sidebar');
+
+            function checkMouseProximity(event) {
+                if (event.clientX < 100) {
+                    sidebar.classList.remove('collapsed');
+                    sidebar.classList.add('expanded');
+                } else {
+                    sidebar.classList.add('collapsed');
+                    sidebar.classList.remove('expanded');
+                }
+            }
+
+            window.addEventListener('mousemove', checkMouseProximity);
+
+            sidebarContainer.addEventListener('mouseenter', function() {
+                sidebar.classList.remove('collapsed');
+                sidebar.classList.add('expanded');
+            });
+            sidebarContainer.addEventListener('mouseleave', function(event) {
+                if (window.innerWidth - event.clientX > 100) {
+                    sidebar.classList.add('collapsed');
+                    sidebar.classList.remove('expanded');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

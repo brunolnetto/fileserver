@@ -1,0 +1,13 @@
+<!-- templates/403.html -->
+
+{% extends 'web/base.html' %}
+
+{% block title %}Forbidden{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1>403 Forbidden</h1>
+    <p>You do not have permission to access this page.</p>
+    <a href="{% url 'home' %}" class="btn btn-primary">Go to Home</a>
+</div>
+{% endblock %}

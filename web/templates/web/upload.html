@@ -1,32 +1,42 @@
-<!-- templates/web/upload.html -->
-
 {% extends 'web/base.html' %}
 
 {% block title %}File Upload{% endblock %}
 
 {% block content %}
-<h1>File Upload</h1>
+<h1 class="mb-4">File Upload</h1>
 <form id="upload-form">
-    <input type="file" id="file-input" name="file" required>
+    {% csrf_token %}
+    <div class="form-group">
+        <label for="file-input">Choose a file:</label>
+        <input type="file" id="file-input" name="file" required class="form-control-file">
+    </div>
     <button type="submit" class="btn btn-primary">Upload</button>
+    <button type="button" id="reset-button" class="btn btn-secondary ml-2">Reset</button>
 </form>
-<div id="progress-container" class="progress mt-3">
-    <div id="progress-bar" class="progress-bar" role="progressbar" style="width: 0%;">0%</div>
+
+<div id="progress-container" class="progress mt-3" style="height: 30px;">
+    <div id="progress-bar" class="progress-bar bg-success" role="progressbar" style="width: 0%;">0%</div>
 </div>
-<p id="status-message"></p>
+
+<p id="status-message" class="mt-2"></p>
+
 <script>
+    const csrftoken = document.querySelector('input[name="csrfmiddlewaretoken"]').value;
+
     document.addEventListener('DOMContentLoaded', function () {
         const progressBar = document.getElementById('progress-bar');
         const fileInput = document.getElementById('file-input');
         const uploadForm = document.getElementById('upload-form');
         const statusMessage = document.getElementById('status-message');
         const uploadButton = uploadForm.querySelector('button[type="submit"]');
-        
+        const resetButton = document.getElementById('reset-button');
+
         uploadForm.addEventListener('submit', function (event) {
             event.preventDefault();
             const file = fileInput.files[0];
             if (!file) {
-                alert("Please select a file first.");
+                statusMessage.textContent = "Please select a file first.";
+                statusMessage.classList.add('text-danger');
                 return;
             }
         
@@ -34,8 +44,9 @@
             formData.append('file', file);
         
             const xhr = new XMLHttpRequest();
-            xhr.open('POST', '{% url "file_upload" %}', true);
-        
+            xhr.open('POST', '{% url "upload_base" %}', true);
+            xhr.setRequestHeader('X-CSRFToken', csrftoken);
+
             xhr.upload.addEventListener('progress', function (event) {
                 if (event.lengthComputable) {
                     const percentComplete = (event.loaded / event.total) * 100;
@@ -48,17 +59,32 @@
                 if (xhr.readyState === XMLHttpRequest.DONE) {
                     if (xhr.status === 200) {
                         statusMessage.textContent = 'File uploaded successfully.';
+                        statusMessage.classList.remove('text-danger');
+                        statusMessage.classList.add('text-success');
                     } else {
-                        statusMessage.textContent = 'Error uploading file.';
+                        statusMessage.textContent = 'Error uploading file. Please try again.';
+                        statusMessage.classList.remove('text-success');
+                        statusMessage.classList.add('text-danger');
                     }
                     uploadButton.disabled = false;
                 }
             };
-        
+
             xhr.send(formData);
             uploadButton.disabled = true;
             statusMessage.textContent = 'Uploading...';
+            statusMessage.classList.remove('text-success', 'text-danger');
+        });
+
+        // Reset button functionality
+        resetButton.addEventListener('click', function () {
+            fileInput.value = ''; // Clear the file input
+            progressBar.style.width = '0%';
+            progressBar.innerText = '0%';
+            statusMessage.textContent = '';
+            statusMessage.classList.remove('text-success', 'text-danger');
         });
     });
 </script>
+
 {% endblock %}
