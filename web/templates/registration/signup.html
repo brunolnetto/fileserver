@@ -22,21 +22,25 @@
     </div>
 
     <!-- Password Field -->
-    <div class="form-group position-relative">
+    <div class="form-group">
         <label for="password1">Password:</label>
-        <input type="password" id="password1" name="password1" class="form-control form-control-sm" placeholder="Enter password" required>
-        <button type="button" id="togglePassword1" class="btn btn-secondary position-absolute end-0 top-50 translate-middle-y border-0 bg-transparent">
-            <i class="bi bi-eye"></i>
-        </button>
+        <div class="password-container">
+            <input type="password" id="password1" name="password1" class="form-control form-control-sm" placeholder="Enter password" required>
+            <button type="button" id="togglePassword1" class="toggle-password">
+                <i class="bi bi-eye"></i>
+            </button>
+        </div>
     </div>
 
     <!-- Confirm Password Field -->
-    <div class="form-group position-relative">
+    <div class="form-group">
         <label for="password2">Confirm Password:</label>
-        <input type="password" id="password2" name="password2" class="form-control form-control-sm" placeholder="Confirm password" required>
-        <button type="button" id="togglePassword2" class="btn btn-secondary position-absolute end-0 top-50 translate-middle-y border-0 bg-transparent">
-            <i class="bi bi-eye"></i>
-        </button>
+        <div class="password-container">
+            <input type="password" id="password2" name="password2" class="form-control form-control-sm" placeholder="Confirm password" required>
+            <button type="button" id="togglePassword2" class="toggle-password">
+                <i class="bi bi-eye"></i>
+            </button>
+        </div>
     </div>
 
     <button type="submit" class="btn btn-primary">Sign Up</button>
@@ -48,16 +52,18 @@
         var passwordField = document.getElementById('password1');
         var type = passwordField.getAttribute('type') === 'password' ? 'text' : 'password';
         passwordField.setAttribute('type', type);
-        this.querySelector('i').classList.toggle('bi-eye', type === 'password');
-        this.querySelector('i').classList.toggle('bi-eye-slash', type === 'text');
+        var icon = this.querySelector('i');
+        icon.classList.toggle('bi-eye', type === 'password');
+        icon.classList.toggle('bi-eye-slash', type === 'text');
     });
 
     document.getElementById('togglePassword2').addEventListener('click', function() {
         var passwordField = document.getElementById('password2');
         var type = passwordField.getAttribute('type') === 'password' ? 'text' : 'password';
         passwordField.setAttribute('type', type);
-        this.querySelector('i').classList.toggle('bi-eye', type === 'password');
-        this.querySelector('i').classList.toggle('bi-eye-slash', type === 'text');
+        var icon = this.querySelector('i');
+        icon.classList.toggle('bi-eye', type === 'password');
+        icon.classList.toggle('bi-eye-slash', type === 'text');
     });
 
     // Client-side validation
@@ -118,4 +124,42 @@
         }
     });
 </script>
+
+<style>
+    .password-container {
+        position: relative;
+    }
+
+    .toggle-password {
+        position: absolute;
+        right: 10px; /* Adjust as needed */
+        top: 50%;
+        transform: translateY(-50%);
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        padding: 0;
+        z-index: 2; /* Ensures the button is above other elements */
+        outline: none; /* Remove outline on focus */
+    }
+
+    .toggle-password i {
+        font-size: 1.5em; /* Increased icon size */
+        color: #007bff; /* Primary color for visibility */
+        transition: color 0.3s ease; /* Smooth transition for color change */
+    }
+
+    .toggle-password:hover i {
+        color: #0056b3; /* Lighter shade for hover effect */
+    }
+
+    .form-control {
+        padding-right: 3em; /* Adjust padding to make room for the icon */
+    }
+
+    .toggle-password:focus, .toggle-password:active {
+        outline: none; /* Remove default focus outline */
+        box-shadow: none; /* Remove focus box-shadow if any */
+    }
+</style>
 {% endblock %}

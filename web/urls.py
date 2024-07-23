@@ -29,6 +29,6 @@ urlpatterns = [
     path('check-username/', check_username, name='check-username'),
     path('check-email/', check_email, name='check_email'),
     path('success/', upload_success, name='upload_success'),
-    path('status/', upload_status, name='upload_status'),
+    path('status-files/', upload_status, name='upload_status'),
 ]
 

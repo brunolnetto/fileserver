@@ -72,22 +72,22 @@ def signup_view(request):
 
         if password1 != password2:
             messages.error(request, 'Passwords do not match.')
-            return render(request, 'web/signup.html')
+            return render(request, 'registration/signup.html')
 
         if User.objects.filter(username=username).exists():
             messages.error(request, 'Username already exists.')
-            return render(request, 'web/signup.html')
+            return render(request, 'registration/signup.html')
 
         if User.objects.filter(email=email).exists():
             messages.error(request, 'Email already exists.')
-            return render(request, 'web/signup.html')
+            return render(request, 'registration/signup.html')
 
         user = User.objects.create_user(username=username, email=email, password=password1)
         login(request, user)
         messages.success(request, 'Sign up successful.')
         return redirect('home')  # Redirect to home or another page
 
-    return render(request, 'web/signup.html')
+    return render(request, 'registration/signup.html')
 
 @login_required
 @login_required

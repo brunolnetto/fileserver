@@ -45,6 +45,10 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 ALLOWED_HOSTS = []
 
+# Session expires after 5 minutes of inactivity
+SESSION_COOKIE_AGE = 10 * 60
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+
 # Add the Redis channel layer for Django Channels if needed
 REDIS_HOST=environ.get('REDIS_HOST', 'localhost')
 REDIS_PORT=environ.get('REDIS_PORT', 6379)
@@ -61,7 +65,6 @@ CHANNEL_LAYERS = {
 
 
 # Application definition
-
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -96,7 +99,14 @@ LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/' 
 
 # Email settings (example using console backend for development)
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+# NOTE: Check url https://myaccount.google.com/apppasswords
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'  # SMTP server address
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = environ.get('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = environ.get('EMAIL_HOST_PASSWORD')
+DEFAULT_FROM_EMAIL = environ.get('DEFAULT_FROM_EMAIL')
 
 ROOT_URLCONF = 'fileserver.urls'
 

@@ -14,12 +14,14 @@
     </div>
     
     <!-- Password Field -->
-    <div class="form-group position-relative">
+    <div class="form-group">
         <label for="password">Password:</label>
-        <input type="password" id="password" name="password" class="form-control form-control-sm" placeholder="Enter your password" required>
-        <button type="button" id="togglePassword" class="btn btn-secondary position-absolute end-0 top-50 translate-middle-y border-0 bg-transparent">
-            <i class="bi bi-eye"></i>
-        </button>
+        <div class="password-container position-relative">
+            <input type="password" id="password" name="password" class="form-control form-control-sm" placeholder="Enter your password" required>
+            <button type="button" id="togglePassword" class="toggle-password btn btn-secondary">
+                <i class="bi bi-eye"></i>
+            </button>
+        </div>
     </div>
     
     <button type="submit" class="btn btn-primary">Login</button>
@@ -39,6 +41,48 @@
         var icon = this.querySelector('i');
         icon.classList.toggle('bi-eye', type === 'password');
         icon.classList.toggle('bi-eye-slash', type === 'text');
+        
+        // Remove focus from the button after clicking
+        this.blur();
     });
 </script>
+
+<style>
+    .password-container {
+        position: relative;
+    }
+
+    .toggle-password {
+        position: absolute;
+        right: 10px; /* Adjust as needed */
+        top: 50%;
+        transform: translateY(-50%);
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        padding: 0;
+        z-index: 2; /* Ensures the button is above other elements */
+        outline: none; /* Remove outline on focus */
+    }
+
+    .toggle-password i {
+        font-size: 1.5em; /* Increased icon size */
+        color: #007bff; /* Primary color for visibility */
+        transition: color 0.3s ease; /* Smooth transition for color change */
+    }
+
+    .toggle-password:hover i {
+        color: #0056b3; /* Lighter shade for hover effect */
+    }
+
+    .form-control {
+        padding-right: 3em; /* Adjust padding to make room for the icon */
+    }
+
+    .toggle-password:focus, .toggle-password:active {
+        outline: none; /* Remove default focus outline */
+        box-shadow: none; /* Remove focus box-shadow if any */
+    }
+</style>
+
 {% endblock %}
