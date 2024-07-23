@@ -67,12 +67,15 @@
         .sidebar a {
             display: flex;
             align-items: center;
-            justify-content: center; /* Center horizontally */
+            justify-content: space-between;
             padding: 10px;
             width: 100%;
+            background-color: #f8f9fa; /* Background color */
             box-sizing: border-box;
             text-decoration: none;
+            padding: 15px; /* Padding for the sidebar */
             color: #333;
+            border-right: 1px solid #ddd; /* Border to the right */
             transition: background-color 0.3s ease;
             position: relative; /* Ensure relative positioning for centering */
         }
@@ -148,6 +151,11 @@
 
         .navbar-nav .nav-item .nav-link:hover {
             color: #007bff;
+        }
+        
+        /* Optional: Add a border to the bottom of the navbar */
+        .navbar {
+            border-bottom: 1px solid #ddd;
         }
 
         .form-container {
@@ -244,6 +252,56 @@
         .reset-btn:hover {
             background-color: #5a6268; /* Darker grey on hover */
         }
+
+        .sidebar-container {
+            display: flex;
+            height: 100vh; /* Ensure the sidebar takes full height */
+        }
+        
+        .home-button {
+            margin-bottom: 15px; /* Space between home button and other icons */
+        }
+        
+        .other-icons {
+            flex-grow: 1; /* Allow the section to take up available space */
+        }
+        
+        .sidebar-bottom {
+            margin-top: auto; /* Push settings and logout to the bottom */
+        }
+        
+        .settings, .logout {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            color: #007bff; /* Color for icons */
+            text-decoration: none;
+        }
+        
+        .settings:hover, .logout a:hover {
+            background-color: #e9ecef; /* Background color on hover */
+            color: #0056b3; /* Darker color on hover */
+        }
+        
+        .sidebar-bottom a {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+        }
+        
+        .settings i, .logout i {
+            font-size: 1.5em; /* Adjust icon size */
+            margin-right: 8px; /* Space between icon and text */
+        }
+        
+        .settings span, .logout span {
+            display: none; /* Hide text by default, can be shown on hover if needed */
+        }
+        
+        /* Optional: Add a border to the bottom of the navbar */
+        .navbar {
+            border-bottom: 1px solid #ddd; 
+        }
     </style>
 </head>
 <body>
@@ -254,9 +312,8 @@
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ml-auto">
                 {% if user.is_authenticated %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'settings' %}"><i class="bi bi-gear"></i> Settings</a>
-                    </li>
+                    <!-- Other navbar items -->
+                    <!-- Remove the settings button here -->
                 {% else %}
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'login' %}">Login</a>
@@ -282,15 +339,20 @@
                 <a href="{% url 'upload_status' %}">
                     <i class="bi bi-file-earmark-text"></i><span></span>
                 </a>
-                <!-- Add more links with icons as needed -->
             </div>
-            <div class="logout">
-                <form id="logout-form" method="post" action="{% url 'logout' %}" style="display:none;">
-                    {% csrf_token %}
-                </form>
-                <a href="#" onclick="document.getElementById('logout-form').submit();">
-                    <i class="bi bi-box-arrow-right"></i><span></span>
+            <!-- Settings and Logout sections moved to the bottom -->
+            <div class="sidebar-bottom">
+                <a href="{% url 'settings' %}" class="settings">
+                    <i class="bi bi-gear"></i><span>Settings</span>
                 </a>
+                <div class="logout">
+                    <form id="logout-form" method="post" action="{% url 'logout' %}" style="display:none;">
+                        {% csrf_token %}
+                    </form>
+                    <a href="#" onclick="document.getElementById('logout-form').submit();">
+                        <i class="bi bi-box-arrow-right"></i><span></span>
+                    </a>
+                </div>
             </div>
             {% endif %}
         </nav>
@@ -298,7 +360,7 @@
             {% block content %}
             {% endblock %}
         </div>
-    </div>
+    </div>    
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {

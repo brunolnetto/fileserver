@@ -1,9 +1,20 @@
 from django.db.models import (
+    OneToOneField, BooleanField, CASCADE,
     Model, FileField, DateTimeField, CharField, IntegerField
 )
-
+from django.contrib.auth.models import User
 from django.utils.translation import gettext_lazy as _
+from django.contrib.auth.models import User
+from django.db import models
 import os
+
+class UserProfile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    first_login = models.BooleanField(default=True)  # Flag to track first login
+
+    def __str__(self):
+        return self.user.username
+
 
 class Upload(Model):
     file = FileField(upload_to='uploads/')

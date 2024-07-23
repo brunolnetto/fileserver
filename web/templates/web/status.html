@@ -5,8 +5,6 @@
 {% block content %}
 <h1 class="mb-4">Uploaded Files</h1>
 
-
-
 <div id="file-content">
     {% if uploads %}
     <form id="delete-form">
@@ -230,8 +228,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
             xhr.onreadystatechange = function() {
                 if (xhr.readyState === XMLHttpRequest.DONE) {
-                    console.log('Response Status:', xhr.status);
-                    console.log('Response Text:', xhr.responseText);
                     if (xhr.status === 200) {
                         // Remove deleted rows from the table
                         selectedCheckboxes.forEach(checkbox => {

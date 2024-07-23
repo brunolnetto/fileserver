@@ -46,6 +46,7 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 ALLOWED_HOSTS = []
 
 # Session expires after 5 minutes of inactivity
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 SESSION_COOKIE_AGE = 10 * 60
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
@@ -74,8 +75,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django_celery_beat',
     'rest_framework',
-    'drf_yasg',    
-    'web',
+    'drf_yasg',
+    'web.apps.WebConfig',
     'api',
 ]
 
@@ -96,7 +97,7 @@ FILE_UPLOAD_HANDLERS = [
 
 LOGIN_URL = '/login'
 LOGIN_REDIRECT_URL = '/'
-LOGOUT_REDIRECT_URL = '/' 
+LOGOUT_REDIRECT_URL = '/'
 
 # Email settings (example using console backend for development)
 # NOTE: Check url https://myaccount.google.com/apppasswords

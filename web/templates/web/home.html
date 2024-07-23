@@ -1,5 +1,3 @@
-<!-- templates/web/home.html -->
-
 {% extends 'web/base.html' %}
 
 {% block title %}Home{% endblock %}
@@ -7,13 +5,28 @@
 {% block content %}
 <div class="container">
     <h1>Welcome to My Django App</h1>
-    <p>This is the home page of your Django application.</p>
-
-    {% if not user.is_authenticated %}
-    <!-- Navigation Links -->
-    <p>Either signup or login on sidebar buttons above to access the app.</p>
+    
+    {% if user.is_authenticated %}
+        {% if user.userprofile.first_login %}
+            <p>Hello, {{ user.username }}! Welcome to your first visit to the app.</p>
+            <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    fetch("{% url 'update_first_login_flag' %}", {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': '{{ csrf_token }}'
+                        },
+                        body: JSON.stringify({})
+                    });
+                });
+            </script>
+        {% else %}
+            <p>Welcome back, {{ user.username }}!</p>
+        {% endif %}
+        <p>Use the links in the sidebar to navigate to different sections of the app.</p>
     {% else %}
-    <p>Use the links in the sidebar to navigate to different sections of the app.</p>
+        <p>Please sign up or log in using the sidebar buttons above to access the app.</p>
     {% endif %}
 </div>
 {% endblock %}

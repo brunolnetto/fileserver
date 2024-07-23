@@ -2,6 +2,7 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
+from django.http import JsonResponse, HttpResponseBadRequest, HttpResponse
 from django.shortcuts import get_object_or_404
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_protect, csrf_exempt
@@ -13,7 +14,7 @@ from django.contrib.auth.models import User
 from django.contrib import messages
 from django.http import JsonResponse
 from django.contrib.auth.models import User
-
+from django.core.mail import send_mail
 
 from django.conf import settings
 import json
@@ -23,24 +24,34 @@ from .utils import custom_error_reponse
 from .forms import UploadForm
 from .models import Upload
 
-def home_view(request):
-    return render(request, 'web/home.html')
-
 from django.contrib.auth.forms import UserCreationForm
 from django.shortcuts import render, redirect
 from django.contrib.auth import login, authenticate
+from django.contrib.auth.views import PasswordResetView
+
+from .forms import CustomPasswordResetForm
+
+class CustomPasswordResetView(PasswordResetView):
+    form_class = CustomPasswordResetForm
+    template_name = 'registration/password_reset_form.html'
+
+def home_view(request):
+    return render(request, 'web/home.html')
 
 
 def login_view(request):
     if request.method == 'POST':
-        form = AuthenticationForm(request, data=request.POST)
-        if form.is_valid():
-            user = form.get_user()
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        user = authenticate(request, username=username, password=password)
+        
+        if user is not None:
             login(request, user)
-            return redirect('home')
-    else:
-        form = AuthenticationForm()
-    return render(request, 'registration/login.html', {'form': form})
+            return redirect('home')  # Redirect to the home page or a dashboard
+        else:
+            # Handle invalid login
+            return render(request, 'registration/login.html', {'error': 'Invalid credentials'})
+    return render(request, 'registration/login.html')
 
 
 def logout_view(request):
@@ -51,17 +62,44 @@ def logout_view(request):
 def login_required_view(request):
     return render(request, 'registration/login_required.html')
 
-@require_POST
+@csrf_exempt
 def check_username(request):
-    username = request.POST.get('username')
-    exists = User.objects.filter(username=username).exists()
-    return JsonResponse({'exists': exists})
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            username = data.get('username', '')
+            exists = User.objects.filter(username=username).exists()
+            return JsonResponse({'exists': exists})
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+    return JsonResponse({'error': 'Invalid request method'}, status=400)
+
+def send_test_email(request):
+    send_mail(
+        'Test Email Subject',
+        'This is a test email message.',
+        settings.EMAIL_HOST_USER,
+        ['recipient@example.com'],
+        fail_silently=False,
+    )
+    return HttpResponse("Test email sent!")
 
 @require_POST
 def check_email(request):
     email = request.POST.get('email')
     exists = User.objects.filter(email=email).exists()
     return JsonResponse({'exists': exists})
+
+@login_required
+@csrf_exempt
+def update_first_login_flag(request):
+    if request.method == 'POST':
+        user_profile = request.user.userprofile
+        if user_profile.first_login:
+            user_profile.first_login = False
+            user_profile.save()
+            return JsonResponse({'status': 'success'})
+    return JsonResponse({'status': 'error'}, status=400)
 
 def signup_view(request):
     if request.method == 'POST':
@@ -187,27 +225,36 @@ def list_files(request):
 @csrf_exempt
 def delete_selected_files_view(request):
     if request.method == 'POST':
-        data = json.loads(request.body)
+        try:
+            # Parse JSON data
+            data = json.loads(request.body)
+            file_ids = data.get('ids', [])
+            
+            # Validate file_ids
+            if not isinstance(file_ids, list):
+                return HttpResponseBadRequest(f'Invalid data format. Expected list, got {type(file_ids).__name__}.')
+            
+            # Query files to delete
+            uploads_to_delete = Upload.objects.filter(id__in=file_ids)
+            deleted_count = uploads_to_delete.count()
+            
+            # Delete files from filesystem
+            for upload in uploads_to_delete:
+                file_path = os.path.join(settings.MEDIA_ROOT, upload.file.name)
+                if os.path.isfile(file_path):
+                    os.remove(file_path)
+            
+            # Delete file records
+            uploads_to_delete.delete()
+            
+            return JsonResponse({'message': f'Successfully deleted {deleted_count} files.'})
 
-        file_ids = data.get('ids', [])
+        except json.JSONDecodeError:
+            return HttpResponseBadRequest('Invalid JSON format.')
+        except Exception as e:
+            return HttpResponseBadRequest(f'An error occurred: {str(e)}')
 
-        if not isinstance(file_ids, list):
-            return custom_error_reponse('Invalid data', 400)
-
-        uploads_to_delete = Upload.objects.filter(id__in=file_ids)
-        deleted_count = uploads_to_delete.count()
-
-        for upload in uploads_to_delete:
-            file_path = os.path.join(settings.MEDIA_ROOT, upload.file.name)
-            if os.path.isfile(file_path):
-                os.remove(file_path)
-
-        uploads_to_delete.delete()
-
-        return custom_error_reponse('Invalid data', 400)
-
-    return custom_error_reponse('Invalid request method', 400)
-
+    return HttpResponseBadRequest('Invalid request method. Use POST.')
 
 def upload_success(request):
     return render(request, 'web/success.html')

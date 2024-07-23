@@ -10,14 +10,35 @@
     <!-- Username Field -->
     <div class="form-group">
         <label for="username">Username:</label>
-        <input type="text" id="username" name="username" class="form-control form-control-sm" placeholder="Enter username" required>
-        <div id="username-error" class="text-danger"></div>
+        <div class="input-group">
+            <input 
+                type="text" 
+                id="username" 
+                name="username" 
+                class="form-control form-control-sm" 
+                placeholder="Enter username" 
+                required
+            >
+        </div>
+        <div id="username-status" class="input-group-append">
+            <!-- Space reserved for the icon -->
+            <span id="username-icon" class="icon-placeholder"></span>
+        </div>
+        <div id="username-feedback" class="feedback text-danger"></div>
+        <div id="username-loading" class="loading-text"></div>
     </div>
 
     <!-- Email Field -->
     <div class="form-group">
         <label for="email">Email:</label>
-        <input type="email" id="email" name="email" class="form-control form-control-sm" placeholder="Enter email" required>
+        <input 
+            type="email" 
+            id="email" 
+            name="email" 
+            class="form-control form-control-sm" 
+            placeholder="Enter email" 
+            required
+        >
         <div id="email-error" class="text-danger"></div>
     </div>
 
@@ -25,9 +46,16 @@
     <div class="form-group">
         <label for="password1">Password:</label>
         <div class="password-container">
-            <input type="password" id="password1" name="password1" class="form-control form-control-sm" placeholder="Enter password" required>
+            <input 
+                type="password" 
+                id="password1" 
+                name="password1" 
+                class="form-control form-control-sm" 
+                placeholder="Enter password" 
+                required
+            >
             <button type="button" id="togglePassword1" class="toggle-password">
-                <i class="bi bi-eye"></i>
+                <i class="bi bi-eye-slash"></i>
             </button>
         </div>
     </div>
@@ -36,9 +64,16 @@
     <div class="form-group">
         <label for="password2">Confirm Password:</label>
         <div class="password-container">
-            <input type="password" id="password2" name="password2" class="form-control form-control-sm" placeholder="Confirm password" required>
+            <input 
+                type="password" 
+                id="password2" 
+                name="password2" 
+                class="form-control form-control-sm" 
+                placeholder="Confirm password" 
+                required
+            >
             <button type="button" id="togglePassword2" class="toggle-password">
-                <i class="bi bi-eye"></i>
+                <i class="bi bi-eye-slash"></i>
             </button>
         </div>
     </div>
@@ -53,8 +88,8 @@
         var type = passwordField.getAttribute('type') === 'password' ? 'text' : 'password';
         passwordField.setAttribute('type', type);
         var icon = this.querySelector('i');
-        icon.classList.toggle('bi-eye', type === 'password');
-        icon.classList.toggle('bi-eye-slash', type === 'text');
+        icon.classList.toggle('bi-eye-slash', type === 'password');
+        icon.classList.toggle('bi-eye', type === 'text');
     });
 
     document.getElementById('togglePassword2').addEventListener('click', function() {
@@ -62,22 +97,74 @@
         var type = passwordField.getAttribute('type') === 'password' ? 'text' : 'password';
         passwordField.setAttribute('type', type);
         var icon = this.querySelector('i');
-        icon.classList.toggle('bi-eye', type === 'password');
-        icon.classList.toggle('bi-eye-slash', type === 'text');
+        icon.classList.toggle('bi-eye-slash', type === 'password');
+        icon.classList.toggle('bi-eye', type === 'text');
     });
 
-    // Client-side validation
+    // Check username availability on each input change
+    document.getElementById('username').addEventListener('input', function() {
+        var username = this.value;
+        var usernameFeedback = document.getElementById('username-feedback');
+        var usernameLoading = document.getElementById('username-loading');
+    
+        // Reset feedback text
+        usernameFeedback.textContent = '';
+    
+        if (username.length > 0) {
+            // Show loading message immediately
+            usernameLoading.textContent = 'Checking availability...';
+    
+            // Function to handle the delayed display of the result
+            function displayAvailability(resultText, isAvailable) {
+                usernameLoading.textContent = '';
+                usernameFeedback.textContent = resultText;
+                if (isAvailable) {
+                    usernameFeedback.classList.add('text-success');
+                    usernameFeedback.classList.remove('text-danger');
+                } else {
+                    usernameFeedback.classList.add('text-danger');
+                    usernameFeedback.classList.remove('text-success');
+                }
+            }
+    
+            // Start the delay timer
+            var loadingTimeout = setTimeout(() => {
+                // Perform the fetch request after delay
+                fetch('/check-username/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('input[name="csrfmiddlewaretoken"]').value
+                    },
+                    body: JSON.stringify({ username: username })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // Update the feedback text after the delay
+                    displayAvailability(data.exists ? 'Username already exists.' : 'Username is available.', !data.exists);
+                })
+                .catch(() => {
+                    // Handle network errors
+                    displayAvailability('Error checking availability.', false);
+                });
+            }, 250);
+        } else {
+            // Clear feedback if the username field is empty
+            usernameLoading.textContent = '';
+            usernameFeedback.textContent = '';
+        }
+    });    
+    
+
+    // Client-side validation on form submit
     document.getElementById('signup-form').addEventListener('submit', function(event) {
         var username = document.getElementById('username').value;
         var email = document.getElementById('email').value;
         var password1 = document.getElementById('password1').value;
         var password2 = document.getElementById('password2').value;
-        var usernameError = document.getElementById('username-error');
+        var usernameFeedback = document.getElementById('username-feedback');
         var emailError = document.getElementById('email-error');
         var valid = true;
-
-        usernameError.textContent = '';
-        emailError.textContent = '';
 
         // Check if passwords match
         if (password1 !== password2) {
@@ -85,41 +172,17 @@
             valid = false;
         }
 
-        // Validate username availability
-        if (valid) {
-            fetch('/check-username/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': document.querySelector('input[name="csrfmiddlewaretoken"]').value
-                },
-                body: JSON.stringify({ username: username })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.exists) {
-                    usernameError.textContent = 'Username already exists.';
-                } else {
-                    // Validate email availability
-                    fetch('/check-email/', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRFToken': document.querySelector('input[name="csrfmiddlewaretoken"]').value
-                        },
-                        body: JSON.stringify({ email: email })
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.exists) {
-                            emailError.textContent = 'Email already exists.';
-                        } else {
-                            // Submit the form if username and email are available
-                            document.getElementById('signup-form').submit();
-                        }
-                    });
-                }
-            });
+        // Check username and email errors
+        if (usernameFeedback.textContent.includes('already exists')) {
+            valid = false;
+        }
+
+        if (emailError.textContent.includes('already exists')) {
+            valid = false;
+        }
+
+        // Prevent form submission if there are validation errors
+        if (!valid) {
             event.preventDefault();
         }
     });
@@ -161,5 +224,74 @@
         outline: none; /* Remove default focus outline */
         box-shadow: none; /* Remove focus box-shadow if any */
     }
+
+    .feedback {
+        font-size: 0.875em;
+    }
+
+    .form-group {
+        position: relative;
+    }
+    
+    .input-group {
+        display: flex;
+        align-items: center;
+        position: relative;
+    }
+
+    .input-group-append {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .input-group-text {
+        width: 2.5em; /* Fixed width for consistency */
+        height: 100%;
+        display: flex;
+        background: transparent;
+        border: none;
+        align-items: center;
+        justify-content: center;
+        min-width: 2.5em; /* Ensures the container maintains space even when empty */
+    }
+
+    .icon-placeholder {
+        display: inline-block;
+        width: 2em; /* Adjust width to provide space for the icon */
+        height: 1.5em; /* Adjust height as needed */
+    }
+
+    .input-group-text.bi {
+        font-size: 1.25em;
+    }
+
+    .feedback, .loading-text {
+        position: absolute;
+        bottom: -1.5em; /* Adjust to be close to the input field */
+        left: 0;
+        width: 100%;
+        font-size: 0.875em; /* Smaller text for feedback */
+    }
+    
+    .feedback {
+        margin-top: 0.25em; /* Space between input field and feedback */
+        font-size: 0.875em; /* Slightly smaller font size for feedback */
+    }
+    
+    .feedback.text-success {
+        color: #28a745; /* Green for available */
+    }
+    
+    .feedback.text-danger {
+        color: #dc3545; /* Red for not available */
+    }
+    
+    
+    .loading-text {
+        color: #6c757d; /* Gray for loading state */
+        font-size: 0.875em; /* Smaller text for loading */
+    }
 </style>
+    
 {% endblock %}
