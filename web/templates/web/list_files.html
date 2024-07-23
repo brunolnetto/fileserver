@@ -1,0 +1,6 @@
+<h2>Settings</h2>
+<form method="post" action="{% url 'update_profile' %}">
+    {% csrf_token %}
+    <!-- Add your fields for updating profile -->
+    <button type="submit">Update Profile</button>
+</form>

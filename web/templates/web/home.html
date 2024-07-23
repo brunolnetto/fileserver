@@ -8,6 +8,12 @@
 <div class="container">
     <h1>Welcome to My Django App</h1>
     <p>This is the home page of your Django application.</p>
+
+    {% if not user.is_authenticated %}
+    <!-- Navigation Links -->
+    <p>Either signup or login on sidebar buttons above to access the app.</p>
+    {% else %}
     <p>Use the links in the sidebar to navigate to different sections of the app.</p>
+    {% endif %}
 </div>
 {% endblock %}

@@ -11,13 +11,13 @@
             padding: 0;
             font-family: Arial, sans-serif;
         }
-        
+
         .sidebar-container {
             display: flex;
             height: 100vh;
             position: relative;
         }
-        
+
         .sidebar {
             height: 100vh;
             position: fixed;
@@ -33,7 +33,7 @@
             flex-direction: column;
             box-sizing: border-box;
         }
-        
+
         .custom-button {
             display: flex;
             align-items: center;
@@ -46,7 +46,7 @@
             cursor: pointer;
             transition: background-color 0.3s ease;
         }
-        
+
         .custom-button:hover {
             background-color: #0056b3;
         }
@@ -55,15 +55,15 @@
             background-color: #f0f0f0;
             border: 1px solid #ccc;
         }
-    
+
         .editable[contenteditable="true"] {
             border: 1px solid #007bff;
         }
-        
+
         .sidebar.collapsed {
             width: 80px;
         }
-        
+
         .sidebar a {
             display: flex;
             align-items: center;
@@ -76,23 +76,23 @@
             transition: background-color 0.3s ease;
             position: relative; /* Ensure relative positioning for centering */
         }
-        
+
         .text-right {
             text-align: right;
         }
-        
+
         .sidebar a i {
             font-size: 24px;
             margin-right: 10px; /* Space between icon and text */
         }
-        
+
         .sidebar a span {
             margin-left: 10px;
             opacity: 1;
             transition: opacity 0.3s ease, visibility 0.3s ease;
             white-space: nowrap; /* Prevent text wrapping */
         }
-        
+
         .sidebar.collapsed a span {
             opacity: 0;
             visibility: hidden;
@@ -107,49 +107,132 @@
             justify-content: center; /* Center horizontally when collapsed */
         }
 
-
         .sidebar a span {
             margin-left: 0; /* Ensure no extra margin when text is hidden */
         }
-        
+
         .sidebar.collapsed a {
             justify-content: center; /* Center horizontally when collapsed */
             text-align: center; /* Ensure text aligns correctly */
         }
-        
+
         .sidebar a:hover {
             background-color: #ddd;
         }
-        
+
         .content {
             margin-left: 250px;
             padding: 20px;
             transition: margin-left 0.3s ease, width 0.3s ease;
             width: calc(100% - 250px);
         }
-        
+
         .content.expanded {
             margin-left: 80px;
             width: calc(100% - 80px);
         }
-        
+
         .home-button {
             width: 100%;
             text-align: center;
         }
-        
+
         .home-button a {
             display: block;
             padding: 15px;
         }
+
+        .navbar-nav .nav-item .nav-link {
+            color: #333;
+        }
+
+        .navbar-nav .nav-item .nav-link:hover {
+            color: #007bff;
+        }
+
+        .form-container {
+            max-width: 400px; /* Adjust as needed */
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .form-group {
+            position: relative;
+            margin-bottom: 15px;
+        }
+        
+        .form-control {
+            padding: 10px;
+        }        
+        
+        .btn-secondary {
+            padding: 0;
+            line-height: 1;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+
+        .form-control-sm {
+            padding: 8px;
+        }
+        
+        .btn-secondary {
+            padding: 0;
+            line-height: 1;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+        
+        .position-absolute {
+            position: absolute;
+        }
+        
+        .end-0 {
+            right: 0;
+        }
+        
+        .top-50 {
+            top: 50%;
+        }
+        
+        .translate-middle-y {
+            transform: translateY(-50%);
+        }
+        
+        .text-center {
+            text-align: center;
+        }
     </style>
 </head>
 <body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ml-auto">
+                {% if user.is_authenticated %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'settings' %}"><i class="bi bi-gear"></i> Settings</a>
+                    </li>
+                {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'login' %}">Login</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'signup' %}">Sign Up</a>
+                    </li>
+                {% endif %}
+            </ul>
+        </div>
+    </nav>
+
     <div class="sidebar-container">
         <nav id="sidebar" class="sidebar collapsed">
             <div class="home-button">
                 <a href="{% url 'home' %}"><i class="bi bi-house-door"></i></a>
             </div>
+            {% if user.is_authenticated %}
             <div class="other-icons">
                 <a href="{% url 'upload_files' %}">
                     <i class="bi bi-upload"></i><span></span>
@@ -159,6 +242,15 @@
                 </a>
                 <!-- Add more links with icons as needed -->
             </div>
+            <div class="logout">
+                <form id="logout-form" method="post" action="{% url 'logout' %}" style="display:none;">
+                    {% csrf_token %}
+                </form>
+                <a href="#" onclick="document.getElementById('logout-form').submit();">
+                    <i class="bi bi-box-arrow-right"></i><span></span>
+                </a>
+            </div>
+            {% endif %}
         </nav>
         <div id="content" class="content">
             {% block content %}
