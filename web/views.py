@@ -168,6 +168,9 @@ def upload_files_view(request):
         if not files:
             return custom_error_reponse('No files uploaded', 400)
         
+        # Get the current user
+        user = request.user
+        
         # Iterate over each file and process it
         for file in files:
             # Validate file type
@@ -175,7 +178,7 @@ def upload_files_view(request):
                 return custom_error_reponse(f'Invalid file type: {file.name}', status=400)
 
             # Save the file (assuming Upload model has a `file` field)
-            upload = Upload(file=file)
+            upload = Upload(file=file, user_id=user)
             upload.save()
 
         return JsonResponse({'status': 'success'})

@@ -6,6 +6,7 @@ from django.contrib.auth.models import User
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth.models import User
 from django.db import models
+from django.conf import settings
 import os
 
 class UserProfile(models.Model):
@@ -16,12 +17,13 @@ class UserProfile(models.Model):
         return self.user.username
 
 
-class Upload(Model):
-    file = FileField(upload_to='uploads/')
-    uploaded_at = DateTimeField(auto_now_add=True)
-    filename = CharField(max_length=255, blank=True)
-    filesize = IntegerField(blank=True, null=True)
-    description = CharField(max_length=500, blank=True)
+class Upload(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='uploads')
+    file = models.FileField(upload_to='uploads/')
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    filename = models.CharField(max_length=255, blank=True)
+    filesize = models.IntegerField(blank=True, null=True)
+    description = models.CharField(max_length=500, blank=True)
 
     def save(self, *args, **kwargs):
         if self.file:

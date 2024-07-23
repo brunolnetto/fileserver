@@ -14,8 +14,8 @@
 
         .sidebar-container {
             display: flex;
-            height: 100vh;
-            position: relative;
+            height: 100vh; /* Ensure the sidebar takes full height */
+            flex-direction: column; /* Ensure footer is at the bottom */
         }
 
         .sidebar {
@@ -302,6 +302,14 @@
         .navbar {
             border-bottom: 1px solid #ddd; 
         }
+
+        /* Footer Styles */
+        .footer {
+            background-color: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            border-top: 1px solid #ddd;
+        }
     </style>
 </head>
 <body>
@@ -391,5 +399,14 @@
             });
         });
     </script>
+    <!-- Footer -->
+    <div class="footer">
+        <p>&copy; 2024 My Django App. All rights reserved.</p>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
 </body>
 </html>

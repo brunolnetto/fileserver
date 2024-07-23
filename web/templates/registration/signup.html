@@ -17,7 +17,9 @@
                 name="username" 
                 class="form-control form-control-sm" 
                 placeholder="Enter username" 
-                required
+                required            
+                onfocus="clearPlaceholder(this)" 
+                onblur="restorePlaceholder(this)"
             >
         </div>
         <div id="username-status" class="input-group-append">
@@ -38,6 +40,8 @@
             class="form-control form-control-sm" 
             placeholder="Enter email" 
             required
+            onfocus="clearPlaceholder(this)" 
+            onblur="restorePlaceholder(this)"
         >
         <div id="email-error" class="text-danger"></div>
     </div>
@@ -53,6 +57,8 @@
                 class="form-control form-control-sm" 
                 placeholder="Enter password" 
                 required
+                onfocus="clearPlaceholder(this)" 
+                onblur="restorePlaceholder(this)"
             >
             <button type="button" id="togglePassword1" class="toggle-password">
                 <i class="bi bi-eye-slash"></i>
@@ -71,6 +77,8 @@
                 class="form-control form-control-sm" 
                 placeholder="Confirm password" 
                 required
+                onfocus="clearPlaceholder(this)" 
+                onblur="restorePlaceholder(this)"
             >
             <button type="button" id="togglePassword2" class="toggle-password">
                 <i class="bi bi-eye-slash"></i>
@@ -82,6 +90,19 @@
 </form>
 
 <script>
+    // Function to clear placeholder on focus
+    function clearPlaceholder(element) {
+        element.setAttribute('data-placeholder', element.placeholder); // Save current placeholder
+        element.placeholder = ''; // Clear placeholder
+    }
+
+    // Function to restore placeholder on blur
+    function restorePlaceholder(element) {
+        if (!element.value) { // Restore only if input is empty
+            element.placeholder = element.getAttribute('data-placeholder');
+        }
+    }
+
     // Toggle password visibility
     document.getElementById('togglePassword1').addEventListener('click', function() {
         var passwordField = document.getElementById('password1');

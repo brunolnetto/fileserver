@@ -34,6 +34,8 @@
                 class="form-control form-control-sm" 
                 placeholder="Enter password" 
                 required
+                onfocus="clearPlaceholder(this)" 
+                onblur="restorePlaceholder(this)"
             >
             <button type="button" id="togglePassword1" class="toggle-password">
                 <i class="bi bi-eye-slash"></i>
