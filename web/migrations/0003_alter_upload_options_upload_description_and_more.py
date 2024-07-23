@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('fileuploader', '0002_upload_delete_fileupload'),
+        ('web', '0002_upload_delete_fileupload'),
     ]
 
     operations = [

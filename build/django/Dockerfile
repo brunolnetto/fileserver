@@ -18,4 +18,4 @@ COPY . .
 EXPOSE 8000
 
 # Start the application
-CMD ["sh", "/app/build/entrypoint.sh"]
+CMD ["sh", "/app/build/django/entrypoint.sh"]

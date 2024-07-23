@@ -6,12 +6,12 @@ python manage.py collectstatic --noinput
 
 # Generate database migrations
 echo "Generating database migrations..."
-python manage.py makemigrations fileserver
+python manage.py makemigrations
 
 # Apply database migrations
 echo "Applying database migrations..."
-python manage.py migrate fileserver
+python manage.py migrate
 
 # Start the development server
 echo "Starting server..."
-python manage.py runserver 0.0.0.0:8000
+exec python manage.py runserver 0.0.0.0:8000

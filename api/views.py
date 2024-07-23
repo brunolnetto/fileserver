@@ -1,16 +1,13 @@
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-from .serializers import FileUploadSerializer
+# views.py
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.conf import settings
 import os
-from django.core.files.storage import default_storage
+import uuid
+
 from web.models import Upload
-from .serializers import FileUploadSerializer
 
 class FileUploadAPIView(APIView):
     def post(self, request):
@@ -20,8 +17,18 @@ class FileUploadAPIView(APIView):
             uploaded_size = 0
             
             # Save file to MEDIA_URL
-            file_path = os.path.join(settings.MEDIA_ROOT, 'uploads', file.name)
-            os.makedirs(os.path.dirname(file_path), exist_ok=True)
+            upload_dir = os.path.join(settings.MEDIA_ROOT, 'uploads')
+            os.makedirs(upload_dir, exist_ok=True)
+            
+            # Check if file with same name exists and generate a unique file name if necessary
+            file_name, file_extension = os.path.splitext(file.name)
+            unique_file_name = file.name
+            counter = 1
+            while os.path.exists(os.path.join(upload_dir, unique_file_name)):
+                unique_file_name = f"{file_name}_{counter}{file_extension}"
+                counter += 1
+            
+            file_path = os.path.join(upload_dir, unique_file_name)
             
             with open(file_path, 'wb+') as destination:
                 for chunk in file.chunks():
@@ -31,7 +38,7 @@ class FileUploadAPIView(APIView):
 
             # Save file information to the database
             Upload.objects.create(
-                file='uploads/' + file.name,
+                file='uploads/' + unique_file_name,
                 description=request.POST.get('description', '')
             )
 
