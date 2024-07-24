@@ -2,10 +2,10 @@
 
 {% load custom_filters %}
 
-{% block title %}{{ model_name }} Table{% endblock %}
+{% block title %}Table {{ model_name }}{% endblock %}
 
 {% block content %}
-<h1 class="mb-4">{{ model_name }} Table</h1>
+<h1 class="mb-4">Table {{ model_name }}</h1>
 
 <div id="table-content">
     {% if objects %}
@@ -16,33 +16,43 @@
             <span class="ml-2">Delete</span>
         </button>
         
-        <div class="table-container">
-            <table class="table table-striped" id="data-table">
-                <thead>
-                    <tr>
-                        <th><input type="checkbox" id="select-all"></th>
-                        {% for field in fields %}
-                            <th>{{ field.verbose_name }}</th>
+        <table class="table table-striped" id="data-table">
+            <thead>
+                <tr>
+                    <th><input type="checkbox" id="select-all"></th>
+                    {% with column_labels=objects.0.get_column_labels %}
+                        {% for field_name, label in column_labels.items %}
+                            <th>{{ label }}</th>
                         {% endfor %}
                         <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for obj in objects %}
-                        <tr data-id="{{ obj.id }}">
-                            <td><input type="checkbox" class="item-select" data-id="{{ obj.id }}"></td>
+                    {% endwith %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for obj in objects %}
+                    <tr data-id="{{ obj.id }}">
+                        <td><input type="checkbox" class="item-select" data-id="{{ obj.id }}"></td>
+                        {% with editable_columns=obj.get_editable_columns %}
                             {% for field in fields %}
-                                <td class="editable">{{ obj|get_field_value:field.name }}</td>
+                                <td 
+                                    class="{% if field.name in editable_columns %}editable{% endif %}"
+                                    data-field="{{ field.name }}"
+                                >
+                                    {{ obj|get_field_value:field.name }}
+                                </td>
                             {% endfor %}
                             <td>
                                 <button type="button" class="btn btn-primary btn-edit">Edit</button>
                             </td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-
+                        {% endwith %}
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="{{ column_labels|length }}">No records found</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
         <button type="button" id="save-button" class="btn btn-success">Save Changes</button>
     </form>
     {% else %}
@@ -240,30 +250,40 @@ document.addEventListener('DOMContentLoaded', function() {
     saveButton.addEventListener('click', function() {
         const rows = document.querySelectorAll('#data-table tbody tr');
         const updatedData = [];
-
+        console.log(':)')
         rows.forEach(row => {
             const cells = row.querySelectorAll('.editable');
             const id = row.getAttribute('data-id');
-
+            
             if (id) {
-                const data = {
-                    id: id,
-                };
-                cells.forEach((cell, index) => {
-                    data[cell.getAttribute('data-field')] = cell.textContent.trim();
+                const data = { id: id };
+                cells.forEach(cell => {
+                    const fieldName = cell.getAttribute('data-field');
+                    const fieldValue = cell.textContent.trim();
+                    
+                    console.log(fieldName)
+                    console.log(fieldValue)
+
+                    if (fieldName) {
+                        data[fieldName] = fieldValue;
+                        console.log(`Field: ${fieldName}, Value: ${fieldValue}`);
+                    } else {
+                        console.warn('No data-field attribute found on cell');
+                    }
                 });
                 updatedData.push(data);
             }
         });
-
+    
+        console.log('Updated Data:', updatedData);
+    
         const xhr = new XMLHttpRequest();
         const updateUrl = "{% url 'update_data' model_name=model_name %}";
-
+    
         xhr.open('POST', updateUrl, true);
-
         xhr.setRequestHeader('X-CSRFToken', csrfToken);
         xhr.setRequestHeader('Content-Type', 'application/json;charset=UTF-8');
-
+    
         xhr.onreadystatechange = function() {
             if (xhr.readyState === XMLHttpRequest.DONE) {
                 if (xhr.status === 200) {
@@ -273,9 +293,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
         };
-
+    
         xhr.send(JSON.stringify({ updates: updatedData }));
     });
+    
 
     // Handle select all checkbox
     selectAllCheckbox.addEventListener('change', function() {
@@ -284,43 +305,38 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Handle delete button click
+    // Handle delete button
     deleteButton.addEventListener('click', function() {
         const selectedIds = Array.from(itemSelectCheckboxes)
             .filter(checkbox => checkbox.checked)
             .map(checkbox => checkbox.getAttribute('data-id'));
 
-        if (selectedIds.length > 0) {
-            const xhr = new XMLHttpRequest();
-            const deleteUrl = "{% url 'delete_selected_data' model_name=model_name %}";
-
-            xhr.open('POST', deleteUrl, true);
-
-            xhr.setRequestHeader('X-CSRFToken', csrfToken);
-            xhr.setRequestHeader('Content-Type', 'application/json;charset=UTF-8');
-
-            xhr.onreadystatechange = function() {
-                if (xhr.readyState === XMLHttpRequest.DONE) {
-                    if (xhr.status === 200) {
-                        selectedIds.forEach(id => {
-                            const row = document.querySelector(`tr[data-id="${id}"]`);
-                            if (row) {
-                                row.remove();
-                            }
-                        });
-                        alert('Selected rows deleted successfully.');
-                    } else {
-                        alert('Error deleting rows.');
-                    }
-                }
-            };
-
-            xhr.send(JSON.stringify({ ids: selectedIds }));
-        } else {
-            alert('No rows selected.');
+        if (selectedIds.length === 0) {
+            alert('Please select at least one item to delete.');
+            return;
         }
+
+        const xhr = new XMLHttpRequest();
+        const deleteUrl = "{% url 'delete_selected_data' model_name=model_name %}";
+
+        xhr.open('POST', deleteUrl, true);
+
+        xhr.setRequestHeader('X-CSRFToken', csrfToken);
+        xhr.setRequestHeader('Content-Type', 'application/json;charset=UTF-8');
+
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === XMLHttpRequest.DONE) {
+                if (xhr.status === 200) {
+                    alert('Items deleted successfully.');
+                    location.reload(); // Refresh the page to reflect changes
+                } else {
+                    alert('Error deleting items.');
+                }
+            }
+        };
+
+        xhr.send(JSON.stringify({ ids: selectedIds }));
     });
 });
 </script>
-
 {% endblock %}

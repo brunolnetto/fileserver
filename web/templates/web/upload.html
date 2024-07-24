@@ -27,61 +27,71 @@
         const progressBar = document.getElementById('progress-bar');
         const statusMessage = document.getElementById('status-message');
         const csrftoken = document.querySelector('input[name="csrfmiddlewaretoken"]').value;
-        
+    
         // Handle file upload
-        uploadForm.addEventListener('submit', function(event) {
-            event.preventDefault();
-            const files = fileInput.files;
-            if (files.length === 0) {
-                alert('Please select files to upload.');
-                return;
-            }
-    
-            const formData = new FormData();
-            for (let i = 0; i < files.length; i++) {
-                formData.append('files', files[i]);
-            }
-    
-            const xhr = new XMLHttpRequest();
-            xhr.open('POST', '{% url "upload_files" %}', true);
-            xhr.setRequestHeader('X-CSRFToken', csrftoken);
-    
-            xhr.upload.addEventListener('progress', function(event) {
-                if (event.lengthComputable) {
-                    const percentComplete = (event.loaded / event.total) * 100;
-                    progressBar.style.width = percentComplete + '%';
-                    progressBar.textContent = Math.round(percentComplete) + '%';
+        if (uploadForm) {
+            uploadForm.addEventListener('submit', function(event) {
+                event.preventDefault();
+                const files = fileInput ? fileInput.files : [];
+                if (files.length === 0) {
+                    alert('Please select files to upload.');
+                    return;
                 }
-            });
     
-            xhr.onload = function() {
-                if (xhr.status === 200) {
-                    statusMessage.textContent = 'Files uploaded successfully.';
+                const formData = new FormData();
+                for (let i = 0; i < files.length; i++) {
+                    formData.append('files', files[i]);
+                }
+    
+                const xhr = new XMLHttpRequest();
+                xhr.open('POST', '{% url "upload_files" %}', true);
+                xhr.setRequestHeader('X-CSRFToken', csrftoken);
+    
+                xhr.upload.addEventListener('progress', function(event) {
+                    if (event.lengthComputable) {
+                        const percentComplete = (event.loaded / event.total) * 100;
+                        progressBar.style.width = percentComplete + '%';
+                        progressBar.textContent = Math.round(percentComplete) + '%';
+                    }
+                });
+    
+                xhr.onload = function() {
+                    if (xhr.status === 200) {
+                        statusMessage.textContent = 'Files uploaded successfully.';
+                        progressBar.style.width = '0%';
+                        progressBar.textContent = '0%';
+                        uploadForm.reset();
+                    } else {
+                        statusMessage.textContent = 'Error uploading files. Status: ' + xhr.status;
+                        console.error('Error:', xhr.responseText);
+                    }
+                };
+    
+                xhr.onerror = function() {
+                    statusMessage.textContent = 'Error uploading files.';
+                    console.error('Network Error');
+                };
+    
+                xhr.send(formData);
+            });
+        }
+    
+        const resetButton = document.getElementById('reset-button');
+        if (resetButton) {
+            resetButton.addEventListener('click', function() {
+                if (uploadForm) {
+                    uploadForm.reset();
+                }
+                if (progressBar) {
                     progressBar.style.width = '0%';
                     progressBar.textContent = '0%';
-                    uploadForm.reset();
-                } else {
-                    statusMessage.textContent = 'Error uploading files. Status: ' + xhr.status;
-                    console.error('Error:', xhr.responseText);
                 }
-            };
+                if (statusMessage) {
+                    statusMessage.textContent = '';
+                }
+            });
+        }
     
-            xhr.onerror = function() {
-                statusMessage.textContent = 'Error uploading files.';
-                console.error('Network Error');
-            };
-    
-            xhr.send(formData);
-        });
-    
-        document.getElementById('reset-button').addEventListener('click', function() {
-            uploadForm.reset();
-            progressBar.style.width = '0%';
-            progressBar.textContent = '0%';
-            statusMessage.textContent = '';
-        });
-    
-        // Handle file update
         const updateForm = document.getElementById('update-form');
         const updateStatusMessage = document.getElementById('update-status-message');
     
@@ -89,45 +99,56 @@
             button.addEventListener('click', function() {
                 const fileId = this.getAttribute('data-file-id');
                 const row = this.closest('tr');
-                const filename = row.querySelector('td:nth-child(2)').textContent;
+                const filename = row ? row.querySelector('td:nth-child(2)').textContent : '';
     
-                document.getElementById('file-id').value = fileId;
-                document.getElementById('new-filename').value = filename;
+                const fileIdInput = document.getElementById('file-id');
+                const newFilenameInput = document.getElementById('new-filename');
+    
+                if (fileIdInput) fileIdInput.value = fileId;
+                if (newFilenameInput) newFilenameInput.value = filename;
             });
         });
     
-        updateForm.addEventListener('submit', function(event) {
-            event.preventDefault();
-            const fileId = document.getElementById('file-id').value;
-            const newFilename = document.getElementById('new-filename').value;
+        if (updateForm) {
+            updateForm.addEventListener('submit', function(event) {
+                event.preventDefault();
+                const fileId = document.getElementById('file-id') ? document.getElementById('file-id').value : '';
+                const newFilename = document.getElementById('new-filename') ? document.getElementById('new-filename').value : '';
     
-            fetch('/update-uploads/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': csrftoken
-                },
-                body: JSON.stringify({ file_id: fileId, new_filename: newFilename })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    updateStatusMessage.textContent = 'File updated successfully.';
-                    const row = document.querySelector(`tr[data-file-id="${fileId}"]`);
-                    row.querySelector('td:nth-child(2)').textContent = newFilename;
-                } else {
-                    updateStatusMessage.textContent = 'Error: ' + data.message;
-                    console.error('Error:', data.message);
-                }
-            })
-            .catch(error => {
-                updateStatusMessage.textContent = 'Error updating file.';
-                console.error('Network Error:', error);
+                fetch('/update-uploads/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrftoken
+                    },
+                    body: JSON.stringify({ file_id: fileId, new_filename: newFilename })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        if (updateStatusMessage) {
+                            updateStatusMessage.textContent = 'File updated successfully.';
+                        }
+                        const row = document.querySelector(`tr[data-file-id="${fileId}"]`);
+                        if (row) {
+                            row.querySelector('td:nth-child(2)').textContent = newFilename;
+                        }
+                    } else {
+                        if (updateStatusMessage) {
+                            updateStatusMessage.textContent = 'Error: ' + data.message;
+                        }
+                        console.error('Error:', data.message);
+                    }
+                })
+                .catch(error => {
+                    if (updateStatusMessage) {
+                        updateStatusMessage.textContent = 'Error updating file.';
+                    }
+                    console.error('Network Error:', error);
+                });
             });
-        });
+        }
     });
-    
-
 </script>
 
 

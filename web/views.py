@@ -61,13 +61,14 @@ def table_view(request, model_name):
         'name': field.name,
         'verbose_name': field.verbose_name
     } for field in fields if field.concrete]
-    
+
     # Fetch data and paginate
     objects = ModelClass.objects.all()
+
     paginator = Paginator(objects, DEFAULT_PAGE_SIZE)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    
+
     return render(
         request, 'web/table_template.html', 
         {
@@ -80,21 +81,40 @@ def table_view(request, model_name):
 @require_POST
 def update_data(request, model_name):
     try:
+        # Get the model class
         model = apps.get_model('web', model_name)
     except LookupError:
         return JsonResponse({'error': 'Model not found'}, status=400)
+    except AttributeError:
+        return JsonResponse({'error': 'Model does not have a get_column_labels method'}, status=400)
 
+    # Parse the JSON request body
     data = json.loads(request.body)
     updates = data.get('updates', [])
 
     for update in updates:
         try:
+            
+            # Get the object to be updated
             obj = model.objects.get(id=update['id'])
-            for attr, value in update.items():
-                setattr(obj, attr, value)
+            
+            for field_name, value in update.items():
+                # Skip the 'id' field
+                if field_name == 'id':
+                    continue
+
+                # Translate label to database field name
+                if field_name:
+                    setattr(obj, field_name, value)
+                    print(f'Setting {field_name} to {value}')
+            
             obj.save()
         except model.DoesNotExist:
+            print(f'Object with id {update["id"]} does not exist')
             continue
+        except Exception as e:
+            print(f'Error updating object: {e}')
+            return JsonResponse({'error': 'Error updating object'}, status=500)
 
     return JsonResponse({'status': 'success'})
 
@@ -150,16 +170,15 @@ def login_required_view(request):
     return render(request, 'registration/login_required.html')
 
 @csrf_exempt
+@require_POST
 def check_username_view(request):
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            username = data.get('username', '')
-            exists = User.objects.filter(username=username).exists()
-            return JsonResponse({'exists': exists})
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
-    return JsonResponse({'error': 'Invalid request method'}, status=400)
+    try:
+        data = json.loads(request.body)
+        username = data.get('username', '')
+        exists = User.objects.filter(username=username).exists()
+        return JsonResponse({'exists': exists})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
 
 def send_test_email(request):
     send_mail(
@@ -179,14 +198,13 @@ def check_email_view(request):
 
 @login_required
 @csrf_exempt
+@require_POST
 def update_first_login_flag(request):
-    if request.method == 'POST':
-        user_profile = request.user.userprofile
-        if user_profile.first_login:
-            user_profile.first_login = False
-            user_profile.save()
-            return JsonResponse({'status': 'success'})
-    return JsonResponse({'status': 'error'}, status=400)
+    user_profile = request.user.userprofile
+    if user_profile.first_login:
+        user_profile.first_login = False
+        user_profile.save()
+        return JsonResponse({'status': 'success'})
 
 def signup_view(request):
     if request.method == 'POST':
@@ -214,7 +232,6 @@ def signup_view(request):
 
     return render(request, 'registration/signup.html')
 
-@login_required
 @login_required
 def settings_view(request):
     if request.method == 'POST':
@@ -268,7 +285,7 @@ def upload_files_view(request):
             upload = Upload(
                 uplo_filename=file.name,
                 uplo_filesize=file.size,
-                # TODO: Add description on upload
+                # TODO: Add description on upload if possible
                 uplo_description='',
                 uplo_file=file, 
                 uplo_user=user

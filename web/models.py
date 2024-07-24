@@ -31,10 +31,28 @@ class Upload(Model):
 
         super().save(*args, **kwargs)
 
+    @staticmethod
+    def get_column_labels():
+        """Returns a dictionary of column names and their labels."""
+        return {
+            'id': 'ID',
+            'uplo_user': 'User',
+            'uplo_file': 'File',
+            'uplo_uploaded_at': 'Uploaded At',
+            'uplo_filename': 'Filename (Bytes)',
+            'uplo_filesize': 'Filesize',
+            'uplo_description': 'Description'
+        }
+
+    @staticmethod
+    def get_editable_columns():
+        """Returns a list of fields that are editable."""
+        return ['uplo_description']
+    
     class Meta:
         verbose_name = _("Upload")
         verbose_name_plural = _("Uploads")
         ordering = ['-uplo_uploaded_at']
 
     def __str__(self):
-        return self.filename or str(self.uplo_file)
+        return self.uplo_filename or str(self.uplo_file)
