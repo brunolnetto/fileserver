@@ -1,16 +1,15 @@
+from django import forms
 from django.forms import ModelForm
+from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
+from django.contrib.auth.forms import UserCreationForm, PasswordResetForm
+
 from .models import Upload
 
 class UploadForm(ModelForm):
     class Meta:
         model = Upload
-        fields = ['file']
-
-
-from django import forms
-from django.contrib.auth.models import User
-from django.contrib.auth.forms import UserCreationForm, PasswordResetForm
-from django.core.exceptions import ValidationError
+        fields = ['uplo_file']
 
 class CustomPasswordResetForm(PasswordResetForm):
     def clean_email(self):

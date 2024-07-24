@@ -1,0 +1,326 @@
+{% extends 'web/base.html' %}
+
+{% load custom_filters %}
+
+{% block title %}{{ model_name }} Table{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">{{ model_name }} Table</h1>
+
+<div id="table-content">
+    {% if objects %}
+    <form id="delete-form">
+        {% csrf_token %}
+        <button type="button" class="custom-button">
+            <i class="bi bi-trash"></i>
+            <span class="ml-2">Delete</span>
+        </button>
+        
+        <div class="table-container">
+            <table class="table table-striped" id="data-table">
+                <thead>
+                    <tr>
+                        <th><input type="checkbox" id="select-all"></th>
+                        {% for field in fields %}
+                            <th>{{ field.verbose_name }}</th>
+                        {% endfor %}
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for obj in objects %}
+                        <tr data-id="{{ obj.id }}">
+                            <td><input type="checkbox" class="item-select" data-id="{{ obj.id }}"></td>
+                            {% for field in fields %}
+                                <td class="editable">{{ obj|get_field_value:field.name }}</td>
+                            {% endfor %}
+                            <td>
+                                <button type="button" class="btn btn-primary btn-edit">Edit</button>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <button type="button" id="save-button" class="btn btn-success">Save Changes</button>
+    </form>
+    {% else %}
+    <p class="text-center">No data available.</p>
+    {% endif %}
+</div>
+
+<div class="pagination-container mt-3">
+    <nav aria-label="Page navigation">
+        <ul class="pagination justify-content-center">
+            {% if objects.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="{% url 'table_view' model_name=model_name %}?page=1" aria-label="First">
+                        <span aria-hidden="true">&laquo;&laquo;</span>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="{% url 'table_view' model_name=model_name %}?page={{ objects.previous_page_number }}" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+            {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">&laquo;&laquo;</span>
+                </li>
+                <li class="page-item disabled">
+                    <span class="page-link">&laquo;</span>
+                </li>
+            {% endif %}
+
+            {% for page_num in objects.paginator.page_range %}
+                <li class="page-item{% if objects.number == page_num %} active{% endif %}">
+                    <a class="page-link" href="{% url 'table_view' model_name=model_name %}?page={{ page_num }}">{{ page_num }}</a>
+                </li>
+            {% endfor %}
+
+            {% if objects.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="{% url 'table_view' model_name=model_name %}?page={{ objects.next_page_number }}" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="{% url 'table_view' model_name=model_name %}?page={{ objects.paginator.num_pages }}" aria-label="Last">
+                        <span aria-hidden="true">&raquo;&raquo;</span>
+                    </a>
+                </li>
+            {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">&raquo;</span>
+                </li>
+                <li class="page-item disabled">
+                    <span class="page-link">&raquo;&raquo;</span>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+</div>
+
+<style>
+    /* Basic table styling */
+    #data-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 20px 0;
+        font-size: 16px;
+        text-align: left;
+    }
+
+    #data-table th, #data-table td {
+        padding: 12px;
+        border-bottom: 1px solid #ddd;
+    }
+
+    #data-table th {
+        background-color: #f4f4f4;
+        cursor: pointer;
+    }
+
+    #data-table tbody tr:hover {
+        background-color: #f1f1f1;
+    }
+
+    /* Editable cell styling */
+    .editable {
+        cursor: pointer;
+    }
+
+    .editable-mode {
+        background-color: #e0f7fa;
+    }
+
+    /* Button styles */
+    .custom-button {
+        background-color: #007bff;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        font-size: 16px;
+        cursor: pointer;
+        border-radius: 5px;
+        margin: 5px;
+    }
+
+    .custom-button:hover {
+        background-color: #0056b3;
+    }
+
+    #save-button {
+        background-color: #28a745;
+    }
+
+    #save-button:hover {
+        background-color: #218838;
+    }
+
+    /* Pagination styling */
+    .pagination-container {
+        margin-top: 20px;
+    }
+
+    .pagination {
+        display: flex;
+        justify-content: center;
+        list-style-type: none;
+        padding: 0;
+    }
+
+    .pagination .page-item {
+        margin: 0 5px;
+    }
+
+    .pagination .page-link {
+        display: block;
+        padding: 10px 15px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        text-decoration: none;
+        color: #007bff;
+    }
+
+    .pagination .page-link:hover {
+        background-color: #e9ecef;
+    }
+
+    .pagination .active .page-link {
+        background-color: #007bff;
+        color: white;
+        border: 1px solid #007bff;
+    }
+
+    .pagination .disabled .page-link {
+        color: #6c757d;
+        cursor: not-allowed;
+    }
+
+    /* Table container for horizontal scrolling */
+    .table-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const table = document.getElementById('data-table');
+    const deleteButton = document.querySelector('.custom-button');
+    const selectAllCheckbox = document.getElementById('select-all');
+    const itemSelectCheckboxes = table.querySelectorAll('.item-select');
+    const csrfToken = document.querySelector('input[name="csrfmiddlewaretoken"]').value;
+    
+    const editButtons = document.querySelectorAll('.btn-edit');
+    const saveButton = document.getElementById('save-button');
+    const modelName = "{{ model_name }}";
+
+    editButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const row = this.closest('tr');
+            const cells = row.querySelectorAll('.editable');
+            
+            cells.forEach(cell => {
+                if (cell.isContentEditable) {
+                    cell.contentEditable = false;
+                    cell.classList.remove('editable-mode');
+                } else {
+                    cell.contentEditable = true;
+                    cell.classList.add('editable-mode');
+                }
+            });
+            
+            this.textContent = this.textContent === 'Edit' ? 'Save' : 'Edit';
+        });
+    });
+
+    saveButton.addEventListener('click', function() {
+        const rows = document.querySelectorAll('#data-table tbody tr');
+        const updatedData = [];
+
+        rows.forEach(row => {
+            const cells = row.querySelectorAll('.editable');
+            const id = row.getAttribute('data-id');
+
+            if (id) {
+                const data = {
+                    id: id,
+                };
+                cells.forEach((cell, index) => {
+                    data[cell.getAttribute('data-field')] = cell.textContent.trim();
+                });
+                updatedData.push(data);
+            }
+        });
+
+        const xhr = new XMLHttpRequest();
+        const updateUrl = "{% url 'update_data' model_name=model_name %}";
+
+        xhr.open('POST', updateUrl, true);
+
+        xhr.setRequestHeader('X-CSRFToken', csrfToken);
+        xhr.setRequestHeader('Content-Type', 'application/json;charset=UTF-8');
+
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === XMLHttpRequest.DONE) {
+                if (xhr.status === 200) {
+                    alert('Changes saved successfully.');
+                } else {
+                    alert('Error saving changes.');
+                }
+            }
+        };
+
+        xhr.send(JSON.stringify({ updates: updatedData }));
+    });
+
+    // Handle select all checkbox
+    selectAllCheckbox.addEventListener('change', function() {
+        itemSelectCheckboxes.forEach(checkbox => {
+            checkbox.checked = this.checked;
+        });
+    });
+
+    // Handle delete button click
+    deleteButton.addEventListener('click', function() {
+        const selectedIds = Array.from(itemSelectCheckboxes)
+            .filter(checkbox => checkbox.checked)
+            .map(checkbox => checkbox.getAttribute('data-id'));
+
+        if (selectedIds.length > 0) {
+            const xhr = new XMLHttpRequest();
+            const deleteUrl = "{% url 'delete_selected_data' model_name=model_name %}";
+
+            xhr.open('POST', deleteUrl, true);
+
+            xhr.setRequestHeader('X-CSRFToken', csrfToken);
+            xhr.setRequestHeader('Content-Type', 'application/json;charset=UTF-8');
+
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    if (xhr.status === 200) {
+                        selectedIds.forEach(id => {
+                            const row = document.querySelector(`tr[data-id="${id}"]`);
+                            if (row) {
+                                row.remove();
+                            }
+                        });
+                        alert('Selected rows deleted successfully.');
+                    } else {
+                        alert('Error deleting rows.');
+                    }
+                }
+            };
+
+            xhr.send(JSON.stringify({ ids: selectedIds }));
+        } else {
+            alert('No rows selected.');
+        }
+    });
+});
+</script>
+
+{% endblock %}

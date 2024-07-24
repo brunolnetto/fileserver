@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>{% block title %}My Django App{% endblock %}</title>
+    <title>{% block title %}My Django App{% endblock %}</title>    
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css">
     <style>
@@ -344,8 +344,9 @@
                 <a href="{% url 'upload_files' %}">
                     <i class="bi bi-upload"></i><span></span>
                 </a>
-                <a href="{% url 'upload_status' %}">
-                    <i class="bi bi-file-earmark-text"></i><span></span>
+                <!-- New icon for dynamic table view -->
+                <a href="{% url 'table_view' model_name='Upload' %}">
+                    <i class="bi bi-table"></i><span></span>
                 </a>
             </div>
             <!-- Settings and Logout sections moved to the bottom -->
@@ -358,7 +359,7 @@
                         {% csrf_token %}
                     </form>
                     <a href="#" onclick="document.getElementById('logout-form').submit();">
-                        <i class="bi bi-box-arrow-right"></i><span></span>
+                        <i class="bi bi-box-arrow-right"></i><span>Logout</span>
                     </a>
                 </div>
             </div>
@@ -368,7 +369,7 @@
             {% block content %}
             {% endblock %}
         </div>
-    </div>    
+    </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {

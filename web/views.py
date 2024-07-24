@@ -4,32 +4,115 @@ from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.http import JsonResponse, HttpResponseBadRequest, HttpResponse
 from django.shortcuts import get_object_or_404
+
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_protect, csrf_exempt
+
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.forms import UserChangeForm
+from django.contrib.auth.forms import (
+    UserChangeForm, UserCreationForm, AuthenticationForm,
+)
+from django.contrib.auth import login, authenticate
 from django.contrib.auth import authenticate, login, logout
-from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.models import User
+from django.db.models import (
+    IntegerField,  DateField, DateTimeField,
+)
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.views import PasswordResetView
+
 from django.contrib import messages
 from django.http import JsonResponse
-from django.contrib.auth.models import User
 from django.core.mail import send_mail
+from django.shortcuts import render, redirect
 
+from django.core.exceptions import ObjectDoesNotExist
+from django.http import JsonResponse
 from django.conf import settings
+from django.apps import apps
+
 import json
 import os
 
-from .utils import custom_error_reponse
-from .forms import UploadForm
+from .forms import CustomPasswordResetForm, UploadForm
+from .utils import custom_error_response
 from .models import Upload
 
-from django.contrib.auth.forms import UserCreationForm
-from django.shortcuts import render, redirect
-from django.contrib.auth import login, authenticate
-from django.contrib.auth.views import PasswordResetView
+DEFAULT_PAGE_SIZE = 10
 
-from .forms import CustomPasswordResetForm
+def get_field_type(field):
+    if isinstance(field, IntegerField):
+        return 'number'
+    elif isinstance(field, DateField) or \
+        isinstance(field, DateTimeField):
+        return 'date'
+    else:
+        return 'string'
+
+def table_view(request, model_name):
+    # Get the model class dynamically
+    ModelClass = apps.get_model('web', model_name)
+    
+    # Get fields for the model
+    fields = ModelClass._meta.get_fields()
+    
+    # Prepare field information for template
+    field_info = [{
+        'name': field.name,
+        'verbose_name': field.verbose_name
+    } for field in fields if field.concrete]
+    
+    # Fetch data and paginate
+    objects = ModelClass.objects.all()
+    paginator = Paginator(objects, DEFAULT_PAGE_SIZE)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    return render(
+        request, 'web/table_template.html', 
+        {
+            'model_name': model_name,
+            'fields': field_info,
+            'objects': page_obj,
+        }
+    )
+
+@require_POST
+def update_data(request, model_name):
+    try:
+        model = apps.get_model('web', model_name)
+    except LookupError:
+        return JsonResponse({'error': 'Model not found'}, status=400)
+
+    data = json.loads(request.body)
+    updates = data.get('updates', [])
+
+    for update in updates:
+        try:
+            obj = model.objects.get(id=update['id'])
+            for attr, value in update.items():
+                setattr(obj, attr, value)
+            obj.save()
+        except model.DoesNotExist:
+            continue
+
+    return JsonResponse({'status': 'success'})
+
+@csrf_exempt
+@require_POST
+def delete_selected_data(request, model_name):
+    try:
+        model = apps.get_model('web', model_name)
+    except LookupError:
+        return JsonResponse({'error': 'Model not found'}, status=400)
+
+    data = json.loads(request.body)
+    ids = data.get('ids', [])
+
+    if ids:
+        model.objects.filter(id__in=ids).delete()
+
+    return JsonResponse({'status': 'success'})
 
 class CustomPasswordResetView(PasswordResetView):
     form_class = CustomPasswordResetForm
@@ -40,6 +123,10 @@ def home_view(request):
 
 
 def login_view(request):
+    if request.user.is_authenticated:
+        messages.info(request, 'You are already logged in.')
+        return redirect('home')
+    
     if request.method == 'POST':
         username = request.POST.get('username')
         password = request.POST.get('password')
@@ -63,7 +150,7 @@ def login_required_view(request):
     return render(request, 'registration/login_required.html')
 
 @csrf_exempt
-def check_username(request):
+def check_username_view(request):
     if request.method == 'POST':
         try:
             data = json.loads(request.body)
@@ -85,7 +172,7 @@ def send_test_email(request):
     return HttpResponse("Test email sent!")
 
 @require_POST
-def check_email(request):
+def check_email_view(request):
     email = request.POST.get('email')
     exists = User.objects.filter(email=email).exists()
     return JsonResponse({'exists': exists})
@@ -166,19 +253,26 @@ def upload_files_view(request):
         files = request.FILES.getlist('files')
         
         if not files:
-            return custom_error_reponse('No files uploaded', 400)
-        
+            return custom_error_response('No files uploaded', 400)
+
         # Get the current user
         user = request.user
-        
+
         # Iterate over each file and process it
         for file in files:
             # Validate file type
             if not validate_file_type(file.name):
-                return custom_error_reponse(f'Invalid file type: {file.name}', status=400)
+                return custom_error_response(f'Invalid file type: {file.name}', status=400)
 
-            # Save the file (assuming Upload model has a `file` field)
-            upload = Upload(file=file, user_id=user)
+            # Save the file (assuming Upload model has a `file` field and a `user` foreign key field)
+            upload = Upload(
+                uplo_filename=file.name,
+                uplo_filesize=file.size,
+                # TODO: Add description on upload
+                uplo_description='',
+                uplo_file=file, 
+                uplo_user=user
+            )
             upload.save()
 
         return JsonResponse({'status': 'success'})
@@ -188,7 +282,7 @@ def upload_files_view(request):
 
 
 @csrf_exempt
-def update_uploads(request):
+def update_uploaded_files_view(request):
     if request.method == 'POST':
         try:
             data = json.loads(request.body)
@@ -200,28 +294,28 @@ def update_uploads(request):
                 filesize_kb = item.get('filesize_kb')
 
                 if not all([upload_id, file, filesize_kb is not None]):
-                    return custom_error_reponse('Missing data', 400)
+                    return custom_error_response('Missing data', 400)
 
-                upload = Upload.objects.get(id=upload_id)
+                upload = Upload.objects.get(uplo_id=upload_id)
                 upload.file = file
                 upload.filesize_kb = filesize_kb
                 upload.save()
 
             return JsonResponse({'status': 'success'})
         except json.JSONDecodeError:
-            return custom_error_reponse('Invalid JSON', 400)
+            return custom_error_response('Invalid JSON', 400)
         except Upload.DoesNotExist:
-            return custom_error_reponse('Upload not found', 404)
+            return custom_error_response('Upload not found', 404)
         except Exception as e:
-            return custom_error_reponse(str(e), 400)
+            return custom_error_response(str(e), 400)
         
-    return custom_error_reponse('Invalid request method', 400)
+    return custom_error_response('Invalid request method', 400)
 
 
 @csrf_exempt
 @login_required
 def list_files(request):
-    uploads = Upload.objects.filter(user=request.user)
+    uploads = Upload.objects.filter(uplo_user=request.user)
     return render(request, 'web/list_files.html', {'uploads': uploads})
 
 
@@ -259,20 +353,20 @@ def delete_selected_files_view(request):
 
     return HttpResponseBadRequest('Invalid request method. Use POST.')
 
-def upload_success(request):
+def upload_success_view(request):
     return render(request, 'web/success.html')
 
 @login_required
-def upload_status(request):
+def upload_status_view(request):
     uploads_list = Upload.objects.all()
     
     # Convert filesize from bytes to megabytes
     for upload in uploads_list:
         # Convert to MB
-        upload.filesize_kb = upload.filesize / 1024
+        upload.filesize_kb = upload.uplo_filesize / 1024
     
     # Show 10 uploads per page
-    paginator = Paginator(uploads_list, 10)  
+    paginator = Paginator(uploads_list, DEFAULT_PAGE_SIZE)  
 
     page_number = request.GET.get('page')
     uploads = paginator.get_page(page_number)

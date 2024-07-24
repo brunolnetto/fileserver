@@ -181,10 +181,12 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         const xhr = new XMLHttpRequest();
-        const updateUrl = "{% url 'update_uploads' %}";
+        const updateUrl = "{% url 'update_files' %}";
 
         xhr.open('POST', updateUrl, true);
-        xhr.setRequestHeader('X-CSRFToken', document.querySelector('input[name="csrfmiddlewaretoken"]').value);
+
+        var csrftoken = document.querySelector('input[name="csrfmiddlewaretoken"]').value;
+        xhr.setRequestHeader('X-CSRFToken', csrftoken);
         xhr.setRequestHeader('Content-Type', 'application/json;charset=UTF-8');
 
         xhr.onreadystatechange = function() {
