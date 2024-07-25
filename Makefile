@@ -49,6 +49,9 @@ run: ## Run the application. Usage: make run
 search: ## Searchs for a token in the code. Usage: make search token=your_token
 	grep -rnw . --exclude-dir=venv --exclude-dir=.git --exclude=poetry.lock -e "$(token)"
 
+sudo: ## 
+	docker exec -it fileserver-web-1 python manage.py createsuperuser
+
 replace: ## Replaces a token in the code. Usage: make replace token=your_token
 	sed -i 's/$(token)/$(new_token)/g' $$(grep -rl "$(token)" . \
 		--exclude-dir=venv \

@@ -267,8 +267,8 @@ def check_email_view(request):
 @require_POST
 def update_first_login_flag(request):
     user_profile = request.user.userprofile
-    if user_profile.first_login:
-        user_profile.first_login = False
+    if user_profile.uspr_first_login:
+        user_profile.uspr_first_login = False
         user_profile.save()
         return JsonResponse({'status': 'success'})
 
