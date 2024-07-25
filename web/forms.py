@@ -36,3 +36,13 @@ class CustomUserCreationForm(UserCreationForm):
             'password1': None,  # Disable default help texts
             'password2': None,
         }
+        
+class UserProfileForm(ModelForm):
+    class Meta:
+        model = User
+        fields = ['email']  # Add other fields if needed
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['email'].widget.attrs.update({'class': 'form-control'})
+        self.fields['email'].required = True

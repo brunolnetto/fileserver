@@ -2,10 +2,10 @@
 
 {% load custom_filters %}
 
-{% block title %}Table {{ model_name }}{% endblock %}
+{% block title %}Tabela {{ model_name }}{% endblock %}
 
 {% block content %}
-<h1 class="mb-4">Table {{ model_name }}</h1>
+<h1 class="mb-4">Tabela {{ model_name }}</h1>
 
 <div id="table-content">
     {% if objects %}
@@ -16,7 +16,7 @@
                 <i class="bi bi-trash"></i>
             </button>
             <button type="button" id="save-button">
-                Save Changes
+                Salvar modificações
             </button>
         </div>
         <table class="table table-striped" id="data-table">
@@ -29,7 +29,7 @@
                                 <span class="sort-indicator"></span>
                             </th>
                         {% endfor %}
-                        <th>Actions</th>
+                        <th>Ações</th>
                     {% endwith %}
                 </tr>
             </thead>
@@ -55,14 +55,14 @@
                     </tr>
                 {% empty %}
                     <tr>
-                        <td colspan="{{ column_labels|length }}">No records found</td>
+                        <td colspan="{{ column_labels|length }}">Não encontramos registros</td>
                     </tr>
                 {% endfor %}
             </tbody>
         </table>
     </form>
     {% else %}
-    <p class="text-center">No data available.</p>
+    <p class="text-center">Dados não disponíveis.</p>
     {% endif %}
 </div>
 

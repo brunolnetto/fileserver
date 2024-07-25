@@ -4,7 +4,7 @@ from django.http import HttpResponseNotFound
 from django.contrib.auth import views as auth_views
 0
 from .views import (
-    home_view, table_view, update_data, delete_selected_files_view,
+    home_view, table_view, update_data, delete_selected_files_view, confirm_email,
     upload_files_view, update_uploaded_files_view, upload_success_view, upload_status_view, 
     delete_selected_files_view, signup_view, login_view, logout_view, settings_view, 
     check_username_view, check_email_view, login_required_view, update_first_login_flag,
@@ -27,6 +27,9 @@ urlpatterns = [
     path('settings/', settings_view, name='settings'),
     path('login_required/', login_required_view, name='login_required'),
     path('update-first-login-flag/', update_first_login_flag, name='update_first_login_flag'),
+    path('password_change/', auth_views.PasswordChangeView.as_view(), name='password_change'),
+    path('password_change/done/', auth_views.PasswordChangeDoneView.as_view(), name='password_change_done'),
+    path('confirm_email/<uidb64>/<token>/', confirm_email, name='confirm_email'),
     path('password_reset/', CustomPasswordResetView.as_view(), name='password_reset'),
     path('password_reset/done/', auth_views.PasswordResetDoneView.as_view(), name='password_reset_done'),
     path('reset/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(), name='password_reset_confirm'),

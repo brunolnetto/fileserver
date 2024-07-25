@@ -21,6 +21,14 @@ from django.db.models import (
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.views import PasswordResetView
 
+from django.utils.http import urlsafe_base64_decode, urlsafe_base64_decode
+from django.template.loader import render_to_string
+from django.contrib.auth import get_user_model
+from django.contrib.auth.tokens import default_token_generator
+from django.utils.encoding import force_str, force_bytes
+from django.core.mail import send_mail
+from django.contrib.sites.shortcuts import get_current_site
+
 from django.contrib import messages
 from django.http import JsonResponse
 from django.core.mail import send_mail
@@ -37,7 +45,8 @@ import logging
 import json
 import os
 
-from .forms import CustomPasswordResetForm, UploadForm
+
+from .forms import CustomPasswordResetForm, UploadForm, UserProfileForm
 from .utils import custom_error_response
 from .models import Upload
 
@@ -206,6 +215,12 @@ class CustomPasswordResetView(PasswordResetView):
     template_name = 'registration/password_reset_form.html'
 
 def home_view(request):
+    context = {
+        'user': request.user,
+    }
+    context = {
+        'user': request.user,
+    }
     return render(request, 'web/home.html')
 
 def login_view(request):
@@ -301,18 +316,46 @@ def signup_view(request):
 @login_required
 def settings_view(request):
     if request.method == 'POST':
-        email = request.POST.get('email')
-        
-        # Update the user profile, excluding username
-        user = request.user
-        user.email = email
-        user.save()
-        
-        messages.success(request, 'Profile updated successfully.')
-        return redirect('settings')  # Redirect back to the settings page
-
+        if 'update_email' in request.POST:
+            email = request.POST.get('email')
+            user = request.user
+            if email and email != user.email:
+                if user.objects.filter(email=email).exists():
+                    messages.error(request, 'Email already in use.')
+                else:
+                    user.email = email
+                    user.save()
+                    # Optional: Send confirmation email
+                    send_mail(
+                        'Email Updated',
+                        'Your email address has been updated.',
+                        settings.DEFAULT_FROM_EMAIL,
+                        [email],
+                        fail_silently=False,
+                    )
+                    messages.success(request, 'Email updated successfully.')
+                return redirect('settings')
+            else:
+                messages.error(request, 'Invalid email address or email unchanged.')
+                return redirect('settings')
+        elif 'change_password' in request.POST:
+            return redirect('password_change')
+    
     return render(request, 'web/settings.html')
 
+
+def confirm_email(request, uidb64, token):
+    uid = force_str(urlsafe_base64_decode(uidb64))
+    user = get_user_model().objects.get(pk=uid)
+    if default_token_generator.check_token(user, token):
+        user.email = user.email
+        user.save()
+        messages.success(request, 'Your email address has been confirmed.')
+        return redirect('login')
+    else:
+        messages.error(request, 'The confirmation link was invalid or has expired.')
+        return redirect('settings')
+    
 
 def handle_uploaded_file(f):
     # Save the file
@@ -398,6 +441,7 @@ def update_uploaded_files_view(request):
 def upload_success_view(request):
     return render(request, 'web/success.html')
 
+
 @login_required
 def upload_status_view(request):
     uploads_list = Upload.objects.all()
@@ -406,7 +450,7 @@ def upload_status_view(request):
     for upload in uploads_list:
         # Convert to MB
         upload.filesize_kb = upload.uplo_filesize / 1024
-    
+
     # Show 10 uploads per page
     paginator = Paginator(uploads_list, DEFAULT_PAGE_SIZE)  
 

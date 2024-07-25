@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>{% block title %}My Django App{% endblock %}</title>
+    <title>{% block title %}Meu app{% endblock %}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">  
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css">
@@ -36,10 +36,10 @@
                     </li>
                 {% else %}
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'login' %}">Login</a>
+                        <a class="nav-link" href="{% url 'login' %}">Logar</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'signup' %}">Sign Up</a>
+                        <a class="nav-link" href="{% url 'signup' %}">Cadastrar</a>
                     </li>
                 {% endif %}
             </ul>
@@ -50,25 +50,25 @@
             <div class="home-button">
                 <a href="{% url 'home' %}" class="{% if request.path == '/home/' %}active{% endif %}">
                     <i class="bi bi-house"></i>
-                    <span>Home</span> <!-- Ensure this is included -->
+                    <span>Página inicial</span> <!-- Ensure this is included -->
                 </a>
             </div>
             {% if user.is_authenticated %}
             <div class="other-icons">
                 <a href="{% url 'upload_files' %}" class="{% if request.path == '/upload_files/' %}active{% endif %}">
                     <i class="bi bi-upload"></i>
-                    <span>Upload</span> <!-- Ensure this is included -->
+                    <span>Carregar</span>
                 </a>
                 <a href="{% url 'table_view' model_name='Upload' %}" class="{% if request.path == '/table_view/' %}active{% endif %}">
                     <i class="bi bi-table"></i>
-                    <span>Table View</span> <!-- Ensure this is included -->
+                    <span>Consultar</span>
                 </a>
             </div>
             <div class="sidebar-bottom">
                 
                 <a href="{% url 'settings' %}" class="settings">
                     <i class="bi bi-gear"></i>
-                    <span>Settings</span>
+                    <span>Configurações</span>
                 </a>
                 <a class="logout">
                     <form id="logout-form" method="post" action="{% url 'logout' %}" style="display:none;">
@@ -76,7 +76,7 @@
                     </form>
                     <a href="#" onclick="document.getElementById('logout-form').submit();">
                         <i class="bi bi-box-arrow-right"></i>
-                        <span>Logout</span>
+                        <span>Desconectar</span>
                     </a>
                 </a>
             </div>
@@ -117,13 +117,7 @@
                 }
             });
         });
-    </script>
-    <!-- Footer -->
-    <div class="footer">
-        <p>&copy; 2024 My Django App. All rights reserved.</p>
-    </div>
 
-    <script>
         document.addEventListener('DOMContentLoaded', function() {
             const themeToggleButton = document.getElementById('theme-toggle');
             const savedTheme = localStorage.getItem('theme') || 'light-mode';
@@ -141,6 +135,11 @@
                 }
             });
         });
-    </script> 
+    </script>
+    <!-- Footer -->
+    <div class="footer">
+        <p>&copy; 2024 My Django App. All rights reserved.</p>
+    </div>
+
 </body>
 </html>

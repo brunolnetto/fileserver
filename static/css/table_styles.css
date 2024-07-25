@@ -86,9 +86,14 @@ button {
 }
 
 .btn-edit {
-    background-color: #007bff; /* Blue color for edit */
-    color: #fff;
-    border: 2px solid transparent;
+    display: flex; /* Use flexbox to center the icon */
+    justify-content: center; /* Center horizontally within button */
+    align-items: center; /* Center vertically within button */
+}
+
+/* Ensure the pencil icon is centered within the button */
+.btn-edit i {
+    margin: 0; /* Remove any default margin */
 }
 
 .btn-edit:hover {

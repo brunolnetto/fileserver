@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 import os
 from os import environ
 from dotenv import load_dotenv
+from django.utils.translation import gettext_lazy as _
 from pathlib import Path
 
 load_dotenv()
@@ -43,7 +44,25 @@ CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 MEDIA_URL = environ.get('FILE_UPLOAD_PATH', '/media/')
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
-ALLOWED_HOSTS = []
+# Static files (CSS, JavaScript, Images)
+# https://docs.djangoproject.com/en/5.0/howto/static-files/
+
+# Define the static files directory
+STATIC_URL = '/static/'
+STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
+
+# Static files (CSS, JavaScript, Images)
+# https://docs.djangoproject.com/en/5.0/howto/static-files/
+
+# Define the static files directory
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+ALLOWED_HOSTS = ['*']
+
+# Add the ngrok URL to CSRF_TRUSTED_ORIGINS
+CSRF_TRUSTED_ORIGINS = [
+    'https://cba9-191-7-29-136.ngrok-free.app',
+]
 
 # Session expires after 5 minutes of inactivity
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'
@@ -90,6 +109,11 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+    # other backends
+]
+
 # File upload handlers
 FILE_UPLOAD_HANDLERS = [
     'django.core.files.uploadhandler.TemporaryFileUploadHandler',
@@ -110,9 +134,6 @@ EMAIL_HOST_PASSWORD = environ.get('EMAIL_HOST_PASSWORD')
 DEFAULT_FROM_EMAIL = environ.get('DEFAULT_FROM_EMAIL')
 
 ROOT_URLCONF = 'fileserver.urls'
-
-STATIC_URL = '/static/'
-STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 
 TEMPLATES = [
     {
@@ -213,13 +234,6 @@ USE_I18N = True
 
 USE_TZ = True
 
-
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/5.0/howto/static-files/
-
-# Define the static files directory
-STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
