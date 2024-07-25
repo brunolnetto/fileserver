@@ -5,7 +5,7 @@ FROM python:3.11
 WORKDIR /app
 
 # Install system dependencies
-RUN apt-get update && apt-get --fix-missing install -y build-essential libpq-dev
+RUN apt-get update && apt-get --fix-missing install -y build-essential libpq-dev gettext 
 
 # Install Python dependencies
 COPY requirements.txt .
