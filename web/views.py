@@ -26,11 +26,14 @@ from django.http import JsonResponse
 from django.core.mail import send_mail
 from django.shortcuts import render, redirect
 
+from shutil import rmtree
+
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import JsonResponse
 from django.conf import settings
 from django.apps import apps
 
+import logging
 import json
 import os
 
@@ -38,7 +41,10 @@ from .forms import CustomPasswordResetForm, UploadForm
 from .utils import custom_error_response
 from .models import Upload
 
-DEFAULT_PAGE_SIZE = 10
+DEFAULT_PAGE_SIZE = 5
+
+# Get the logger
+logger = logging.getLogger('django')
 
 def get_field_type(field):
     if isinstance(field, IntegerField):
@@ -51,7 +57,20 @@ def get_field_type(field):
 
 def table_view(request, model_name):
     # Get the model class dynamically
-    ModelClass = apps.get_model('web', model_name)
+    try:
+        ModelClass = apps.get_model('web', model_name)
+    except LookupError:
+        return JsonResponse({'error': 'Model not found'}, status=400)
+    
+    sort_field = request.GET.get('sort_field')
+    sort_order = request.GET.get('sort_order', 'asc')
+    objects = ModelClass.objects.all()
+
+    if sort_field:
+        if sort_order == 'asc':
+            objects = objects.order_by(sort_field)
+        else:
+            objects = objects.order_by(f'-{sort_field}')
     
     # Get fields for the model
     fields = ModelClass._meta.get_fields()
@@ -66,7 +85,7 @@ def table_view(request, model_name):
     objects = ModelClass.objects.all()
 
     paginator = Paginator(objects, DEFAULT_PAGE_SIZE)
-    page_number = request.GET.get('page')
+    page_number = request.GET.get('page', 1)
     page_obj = paginator.get_page(page_number)
 
     return render(
@@ -120,27 +139,74 @@ def update_data(request, model_name):
 
 @csrf_exempt
 @require_POST
-def delete_selected_data(request, model_name):
+def delete_selected_files_view(request, model_name):
     try:
+        # Get the model class based on the model_name
         model = apps.get_model('web', model_name)
     except LookupError:
+        logger.error(f"Model not found: {model_name}")
         return JsonResponse({'error': 'Model not found'}, status=400)
 
-    data = json.loads(request.body)
+    try:
+        # Load and parse JSON data from the request body
+        data = json.loads(request.body)
+    except json.JSONDecodeError as e:
+        logger.error(f"JSON decode error: {str(e)}")
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+
     ids = data.get('ids', [])
+    logger.debug(f"Received IDs to delete: {ids}")
 
-    if ids:
-        model.objects.filter(id__in=ids).delete()
+    if not ids:
+        return JsonResponse({'status': 'success', 'message': 'No IDs provided'})
 
+    # Convert IDs to the correct type if necessary (e.g., integers)
+    ids = [int(id) for id in ids]  # Modify this line based on the actual ID type
+
+    # Query objects to delete
+    objects = model.objects.filter(id__in=ids)
+
+    if not objects.exists():
+        logger.debug(f"No objects found with IDs: {ids}")
+        return JsonResponse({'status': 'success', 'message': 'No objects found with the provided IDs'})
+
+    # Get the field name for the file
+    file_field_name = model.get_delete_field()
+    logger.debug(f"File field name: {file_field_name}")
+
+    if file_field_name:
+        # Ensure the model has the file field
+        if hasattr(model, file_field_name):
+            
+            # Delete associated files
+            for obj in objects:
+                # Construct the file path
+                file_field = getattr(obj, file_field_name)
+                if file_field:
+                    file_path = os.path.join(settings.MEDIA_ROOT, file_field.name)
+                    logger.debug(f"Checking file path: {file_path}")
+                    if os.path.isfile(file_path):
+                        try:
+                            os.remove(file_path)
+                            logger.debug(f"Successfully deleted file: {file_path}")
+                        except Exception as e:
+                            logger.error(f"Error deleting file {file_path}: {str(e)}")
+                    else:
+                        logger.warning(f"File not found: {file_path}")
+        else:
+            logger.error(f"Model does not have a field named: {file_field_name}")
+
+    # Delete database entries
+    deleted_count, _ = model.objects.filter(id__in=ids).delete()
+    logger.debug(f"Number of objects deleted from database: {deleted_count}")
+    
     return JsonResponse({'status': 'success'})
-
 class CustomPasswordResetView(PasswordResetView):
     form_class = CustomPasswordResetForm
     template_name = 'registration/password_reset_form.html'
 
 def home_view(request):
     return render(request, 'web/home.html')
-
 
 def login_view(request):
     if request.user.is_authenticated:
@@ -328,47 +394,6 @@ def update_uploaded_files_view(request):
         
     return custom_error_response('Invalid request method', 400)
 
-
-@csrf_exempt
-@login_required
-def list_files(request):
-    uploads = Upload.objects.filter(uplo_user=request.user)
-    return render(request, 'web/list_files.html', {'uploads': uploads})
-
-
-@csrf_exempt
-def delete_selected_files_view(request):
-    if request.method == 'POST':
-        try:
-            # Parse JSON data
-            data = json.loads(request.body)
-            file_ids = data.get('ids', [])
-            
-            # Validate file_ids
-            if not isinstance(file_ids, list):
-                return HttpResponseBadRequest(f'Invalid data format. Expected list, got {type(file_ids).__name__}.')
-            
-            # Query files to delete
-            uploads_to_delete = Upload.objects.filter(id__in=file_ids)
-            deleted_count = uploads_to_delete.count()
-            
-            # Delete files from filesystem
-            for upload in uploads_to_delete:
-                file_path = os.path.join(settings.MEDIA_ROOT, upload.file.name)
-                if os.path.isfile(file_path):
-                    os.remove(file_path)
-            
-            # Delete file records
-            uploads_to_delete.delete()
-            
-            return JsonResponse({'message': f'Successfully deleted {deleted_count} files.'})
-
-        except json.JSONDecodeError:
-            return HttpResponseBadRequest('Invalid JSON format.')
-        except Exception as e:
-            return HttpResponseBadRequest(f'An error occurred: {str(e)}')
-
-    return HttpResponseBadRequest('Invalid request method. Use POST.')
 
 def upload_success_view(request):
     return render(request, 'web/success.html')

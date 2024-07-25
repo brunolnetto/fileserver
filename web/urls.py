@@ -4,7 +4,7 @@ from django.http import HttpResponseNotFound
 from django.contrib.auth import views as auth_views
 0
 from .views import (
-    home_view, table_view, update_data, delete_selected_data,
+    home_view, table_view, update_data, delete_selected_files_view,
     upload_files_view, update_uploaded_files_view, upload_success_view, upload_status_view, 
     delete_selected_files_view, signup_view, login_view, logout_view, settings_view, 
     check_username_view, check_email_view, login_required_view, update_first_login_flag,
@@ -43,6 +43,6 @@ urlpatterns = [
     # Table routes
     path('table/<str:model_name>/', table_view, name='table_view'),
     path('update_data/<str:model_name>/', update_data, name='update_data'),
-    path('delete_selected_data/<str:model_name>/', delete_selected_data, name='delete_selected_data'),
+    path('delete_selected_data/<str:model_name>/', delete_selected_files_view, name='delete_selected_data'),
 ]
 

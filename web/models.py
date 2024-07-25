@@ -26,11 +26,15 @@ class Upload(Model):
 
     def save(self, *args, **kwargs):
         if self.uplo_file:
-            self.filename = os.path.basename(self.uplo_file.name)
-            self.filesize = self.uplo_file.size
+            self.uplo_filename = os.path.basename(self.uplo_file.name)
+            self.uplo_filesize = self.uplo_file.size
 
         super().save(*args, **kwargs)
 
+    @staticmethod
+    def get_delete_field():
+        return 'uplo_file'
+    
     @staticmethod
     def get_column_labels():
         """Returns a dictionary of column names and their labels."""
@@ -56,3 +60,15 @@ class Upload(Model):
 
     def __str__(self):
         return self.uplo_filename or str(self.uplo_file)
+
+
+class FileVersion(models.Model):
+    file = models.ForeignKey(Upload, on_delete=models.CASCADE)
+    version = models.PositiveIntegerField()
+    file = models.FileField(upload_to='uploads/')
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        if not self.pk:
+            self.version = FileVersion.objects.filter(file=self.file).count() + 1
+        super().save(*args, **kwargs)

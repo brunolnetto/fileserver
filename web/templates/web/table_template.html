@@ -11,18 +11,23 @@
     {% if objects %}
     <form id="delete-form">
         {% csrf_token %}
-        <button type="button" class="custom-button">
-            <i class="bi bi-trash"></i>
-            <span class="ml-2">Delete</span>
-        </button>
-        
+        <div class="button-container">
+            <button type="button" class="custom-button">
+                <i class="bi bi-trash"></i>
+            </button>
+            <button type="button" id="save-button">
+                Save Changes
+            </button>
+        </div>
         <table class="table table-striped" id="data-table">
             <thead>
                 <tr>
                     <th><input type="checkbox" id="select-all"></th>
                     {% with column_labels=objects.0.get_column_labels %}
                         {% for field_name, label in column_labels.items %}
-                            <th>{{ label }}</th>
+                            <th class="sortable" data-field="{{ field_name }}">{{ label }}
+                                <span class="sort-indicator"></span>
+                            </th>
                         {% endfor %}
                         <th>Actions</th>
                     {% endwith %}
@@ -42,7 +47,9 @@
                                 </td>
                             {% endfor %}
                             <td>
-                                <button type="button" class="btn btn-primary btn-edit">Edit</button>
+                                <button type="button" class="btn btn-primary btn-edit">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
                             </td>
                         {% endwith %}
                     </tr>
@@ -53,7 +60,6 @@
                 {% endfor %}
             </tbody>
         </table>
-        <button type="button" id="save-button" class="btn btn-success">Save Changes</button>
     </form>
     {% else %}
     <p class="text-center">No data available.</p>
@@ -112,110 +118,6 @@
     </nav>
 </div>
 
-<style>
-    /* Basic table styling */
-    #data-table {
-        width: 100%;
-        border-collapse: collapse;
-        margin: 20px 0;
-        font-size: 16px;
-        text-align: left;
-    }
-
-    #data-table th, #data-table td {
-        padding: 12px;
-        border-bottom: 1px solid #ddd;
-    }
-
-    #data-table th {
-        background-color: #f4f4f4;
-        cursor: pointer;
-    }
-
-    #data-table tbody tr:hover {
-        background-color: #f1f1f1;
-    }
-
-    /* Editable cell styling */
-    .editable {
-        cursor: pointer;
-    }
-
-    .editable-mode {
-        background-color: #e0f7fa;
-    }
-
-    /* Button styles */
-    .custom-button {
-        background-color: #007bff;
-        color: white;
-        border: none;
-        padding: 10px 20px;
-        font-size: 16px;
-        cursor: pointer;
-        border-radius: 5px;
-        margin: 5px;
-    }
-
-    .custom-button:hover {
-        background-color: #0056b3;
-    }
-
-    #save-button {
-        background-color: #28a745;
-    }
-
-    #save-button:hover {
-        background-color: #218838;
-    }
-
-    /* Pagination styling */
-    .pagination-container {
-        margin-top: 20px;
-    }
-
-    .pagination {
-        display: flex;
-        justify-content: center;
-        list-style-type: none;
-        padding: 0;
-    }
-
-    .pagination .page-item {
-        margin: 0 5px;
-    }
-
-    .pagination .page-link {
-        display: block;
-        padding: 10px 15px;
-        border: 1px solid #ddd;
-        border-radius: 5px;
-        text-decoration: none;
-        color: #007bff;
-    }
-
-    .pagination .page-link:hover {
-        background-color: #e9ecef;
-    }
-
-    .pagination .active .page-link {
-        background-color: #007bff;
-        color: white;
-        border: 1px solid #007bff;
-    }
-
-    .pagination .disabled .page-link {
-        color: #6c757d;
-        cursor: not-allowed;
-    }
-
-    /* Table container for horizontal scrolling */
-    .table-container {
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
-    }
-</style>
-
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const table = document.getElementById('data-table');
@@ -228,29 +130,85 @@ document.addEventListener('DOMContentLoaded', function() {
     const saveButton = document.getElementById('save-button');
     const modelName = "{{ model_name }}";
 
+    const headers = table.querySelectorAll('th.sortable');
+    let currentSortField = null;
+    let currentSortOrder = 'asc';
+
+    headers.forEach(header => {
+        header.addEventListener('click', function() {
+            const field = this.getAttribute('data-field');
+            if (currentSortField === field) {
+                // Toggle sort order
+                currentSortOrder = currentSortOrder === 'asc' ? 'desc' : 'asc';
+            } else {
+                // New sort field
+                currentSortField = field;
+                currentSortOrder = 'asc';
+            }
+
+            sortTable(field, currentSortOrder);
+            updateSortIndicators();
+        });
+    });
+
+    function sortTable(field, order) {
+        const rows = Array.from(table.querySelectorAll('tbody tr'));
+        rows.sort((a, b) => {
+            const cellA = a.querySelector(`[data-field="${field}"]`).textContent.trim();
+            const cellB = b.querySelector(`[data-field="${field}"]`).textContent.trim();
+
+            if (order === 'asc') {
+                return cellA.localeCompare(cellB, undefined, { numeric: true });
+            } else {
+                return cellB.localeCompare(cellA, undefined, { numeric: true });
+            }
+        });
+
+        const tbody = table.querySelector('tbody');
+        rows.forEach(row => tbody.appendChild(row));
+    }
+
+    function updateSortIndicators() {
+        headers.forEach(header => {
+            header.querySelector('.sort-indicator').classList.remove('asc', 'desc');
+            if (header.getAttribute('data-field') === currentSortField) {
+                header.querySelector('.sort-indicator').classList.add(currentSortOrder);
+            }
+        });
+    }
+
     editButtons.forEach(button => {
         button.addEventListener('click', function() {
             const row = this.closest('tr');
             const cells = row.querySelectorAll('.editable');
+            const isEditing = this.querySelector('i').classList.contains('bi-pencil');
             
             cells.forEach(cell => {
-                if (cell.isContentEditable) {
-                    cell.contentEditable = false;
-                    cell.classList.remove('editable-mode');
-                } else {
+                if (isEditing) {
                     cell.contentEditable = true;
                     cell.classList.add('editable-mode');
+                } else {
+                    cell.contentEditable = false;
+                    cell.classList.remove('editable-mode');
                 }
             });
-            
-            this.textContent = this.textContent === 'Edit' ? 'Save' : 'Edit';
+
+            if (isEditing) {
+                this.querySelector('i').classList.remove('bi-pencil');
+                this.querySelector('i').classList.add('bi-save');
+                this.setAttribute('title', 'Save changes');
+            } else {
+                this.querySelector('i').classList.remove('bi-save');
+                this.querySelector('i').classList.add('bi-pencil');
+                this.setAttribute('title', 'Edit');
+            }
         });
     });
 
     saveButton.addEventListener('click', function() {
         const rows = document.querySelectorAll('#data-table tbody tr');
         const updatedData = [];
-        console.log(':)')
+        
         rows.forEach(row => {
             const cells = row.querySelectorAll('.editable');
             const id = row.getAttribute('data-id');
@@ -260,9 +218,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 cells.forEach(cell => {
                     const fieldName = cell.getAttribute('data-field');
                     const fieldValue = cell.textContent.trim();
-                    
-                    console.log(fieldName)
-                    console.log(fieldValue)
 
                     if (fieldName) {
                         data[fieldName] = fieldValue;
@@ -274,8 +229,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 updatedData.push(data);
             }
         });
-    
-        console.log('Updated Data:', updatedData);
     
         const xhr = new XMLHttpRequest();
         const updateUrl = "{% url 'update_data' model_name=model_name %}";
