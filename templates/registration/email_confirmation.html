@@ -1,0 +1,79 @@
+{% autoescape off %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirmação de E-mail</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        .header img {
+            max-width: 150px;
+            margin-bottom: 20px;
+        }
+        .content {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        .button {
+            display: inline-block;
+            padding: 10px 20px;
+            font-size: 16px;
+            color: #ffffff;
+            background-color: #007bff;
+            text-decoration: none;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .footer {
+            font-size: 14px;
+            color: #777;
+            text-align: center;
+        }
+        @media (max-width: 600px) {
+            .container {
+                padding: 10px;
+            }
+            .button {
+                font-size: 14px;
+                padding: 8px 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="http://example.com/logo.png" alt="Logo do Seu Site">
+        </div>
+        <div class="content">
+            <p>Olá {{ user.username }},</p>
+            <p>Para concluir seu cadastro, por favor, confirme seu endereço de e-mail clicando no botão abaixo:</p>
+            <p>
+                <a href="http://{{ domain }}/confirm_email/{{ uid }}/{{ token }}" class="button">Confirmar E-mail</a>
+            </p>
+            <p>Se você não solicitou esta alteração, por favor, ignore este e-mail.</p>
+        </div>
+        <div class="footer">
+            <p>Obrigado,</p>
+            <p>Equipe do Seu Site</p>
+        </div>
+    </div>
+</body>
+</html>
+{% endautoescape %}

@@ -61,7 +61,7 @@ ALLOWED_HOSTS = ['*']
 
 # Add the ngrok URL to CSRF_TRUSTED_ORIGINS
 CSRF_TRUSTED_ORIGINS = [
-    'https://875b-191-7-29-136.ngrok-free.app',
+    'https://1c3e-191-7-29-136.ngrok-free.app',
 ]
 
 # Session expires after 5 minutes of inactivity
@@ -82,7 +82,6 @@ CHANNEL_LAYERS = {
         },
     },
 }
-
 
 # Application definition
 INSTALLED_APPS = [
@@ -122,6 +121,8 @@ FILE_UPLOAD_HANDLERS = [
 LOGIN_URL = '/login'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
+
+DOMAIN = environ.get('DOMAIN', 'http://localhost:8000')
 
 # Email settings (example using console backend for development)
 # NOTE: Check url https://myaccount.google.com/apppasswords

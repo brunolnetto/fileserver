@@ -10,11 +10,26 @@ import os
 
 class UserProfile(Model):
     uspr_user = OneToOneField(User, on_delete=CASCADE)
-    uspr_first_login = BooleanField(default=True)  # Flag to track first login
+    uspr_first_login = BooleanField(default=True)
 
     def __str__(self):
-        return self.user.username
+        return self.uspr_user.username
 
+
+class PendingRegistration(models.Model):
+    pere_username = models.CharField(max_length=150, unique=True)
+    pere_email = models.EmailField(unique=True)
+    pere_hashed_password = models.CharField(max_length=128)
+    pere_created_at = models.DateTimeField(auto_now_add=True)
+    pere_activation_token = models.CharField(max_length=255)
+    pere_is_activated = models.BooleanField(default=False)
+
+class EmailQueue(models.Model):
+    email = models.EmailField()
+    subject = models.CharField(max_length=255)
+    message = models.TextField()
+    sent = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
 
 class Upload(Model):
     uplo_user = ForeignKey(User, on_delete=CASCADE)
@@ -72,14 +87,3 @@ class Upload(Model):
     def __str__(self):
         return self.uplo_filename or str(self.uplo_file)
 
-
-class FileVersion(models.Model):
-    file = models.ForeignKey(Upload, on_delete=models.CASCADE)
-    version = models.PositiveIntegerField()
-    file = models.FileField(upload_to='uploads/')
-    uploaded_at = models.DateTimeField(auto_now_add=True)
-
-    def save(self, *args, **kwargs):
-        if not self.pk:
-            self.version = FileVersion.objects.filter(file=self.file).count() + 1
-        super().save(*args, **kwargs)

@@ -28,21 +28,20 @@
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ml-auto">
                 <!-- Other navbar items -->
-                {% if user.is_authenticated %}
+                {% if not user.is_authenticated %}
                     <li class="nav-item">
-                        <button id="theme-toggle" class="theme-toggle-btn" aria-label="Toggle theme">
-                            <i class="fa fa-sun"></i> <!-- Sun icon for light mode -->
-                            <i class="fa fa-moon"></i> <!-- Moon icon for dark mode -->
-                        </button>
-                    </li>
-                {% else %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'login' %}">Logar</a>
+                        <a class="nav-link" href="{% url 'login' %}">Entrar</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'signup' %}">Cadastrar</a>
                     </li>
                 {% endif %}
+                <li class="nav-item">
+                    <button id="theme-toggle" class="theme-toggle-btn" aria-label="Toggle theme">
+                        <i class="fa fa-sun"></i> <!-- Sun icon for light mode -->
+                        <i class="fa fa-moon"></i> <!-- Moon icon for dark mode -->
+                    </button>
+                </li>
             </ul>
         </div>
     </nav>        
@@ -88,8 +87,8 @@
     
 
     <script>
-        var sidebarContainer = document.querySelector('.sidebar-container');
-        var sidebar = document.getElementById('sidebar');
+        let sidebarContainer = document.querySelector('.sidebar-container');
+        let sidebar = document.getElementById('sidebar');
 
         // Debounce function to limit the rate at which checkMouseProximity is called
         function debounce(func, wait) {

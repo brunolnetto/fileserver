@@ -1,54 +1,50 @@
 # views.py
 from django.shortcuts import render, redirect
-from django.contrib.auth.decorators import login_required
-from django.core.paginator import Paginator
-from django.http import JsonResponse, HttpResponseBadRequest, HttpResponse
 from django.shortcuts import get_object_or_404
+
+from django.core.paginator import Paginator
+from django.core.mail import BadHeaderError
 
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_protect, csrf_exempt
 
+from django.http import JsonResponse, HttpResponseBadRequest, HttpResponse
+
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.forms import (
-    UserChangeForm, UserCreationForm, AuthenticationForm,
-)
+from django.contrib.auth.forms import UserChangeForm, UserCreationForm, AuthenticationForm
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth import login, authenticate
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
-from django.db.models import (
-    IntegerField,  DateField, DateTimeField,
-)
-from django.contrib.auth.forms import UserCreationForm
-from django.contrib.auth.views import PasswordResetView
-
-from django.utils.http import urlsafe_base64_decode, urlsafe_base64_decode
-from django.template.loader import render_to_string
+from django.db.models import IntegerField,  DateField, DateTimeField
+from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import default_token_generator
-from django.utils.encoding import force_str, force_bytes
-from django.core.mail import send_mail
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.views import PasswordResetView
 from django.contrib.sites.shortcuts import get_current_site
 
-from django.contrib import messages
-from django.http import JsonResponse
+from django.utils.html import strip_tags
+from django.utils.encoding import force_str, force_bytes
+from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
+
+from django.template.loader import render_to_string
+
 from django.core.mail import send_mail
-from django.shortcuts import render, redirect
-
-from shutil import rmtree
-
 from django.core.exceptions import ObjectDoesNotExist
-from django.http import JsonResponse
+
 from django.conf import settings
 from django.apps import apps
 
+from shutil import rmtree
 import logging
 import json
 import os
 
-
+from .tasks import send_confirmation_email_task
 from .forms import CustomPasswordResetForm, UploadForm, UserProfileForm
 from .utils import custom_error_response
-from .models import Upload
+from .models import Upload, EmailQueue
 
 DEFAULT_PAGE_SIZE = 5
 
@@ -225,7 +221,7 @@ def home_view(request):
 
 def login_view(request):
     if request.user.is_authenticated:
-        messages.info(request, 'You are already logged in.')
+        messages.info(request, 'Você já está logado.')
         return redirect('home')
     
     if request.method == 'POST':
@@ -238,18 +234,8 @@ def login_view(request):
             return redirect('home')  # Redirect to the home page or a dashboard
         else:
             # Handle invalid login
-            return render(request, 'registration/login.html', {'error': 'Invalid credentials'})
+            return render(request, 'registration/login.html', {'error': 'Credenciais inválidas'})
     return render(request, 'registration/login.html')
-
-@csrf_exempt
-def file_list(request):
-    files = Upload.objects.all()  # Replace with your query
-    paginator = Paginator(files, 10)  # Show 10 files per page
-
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-
-    return render(request, 'your_template.html', {'page_obj': page_obj})
 
 def logout_view(request):
     logout(request)
@@ -265,20 +251,22 @@ def check_username_view(request):
     try:
         data = json.loads(request.body)
         username = data.get('username', '')
-        exists = User.objects.filter(username=username).exists()
+        activated_user_exists = User.objects.filter(username=username).exists()
+        pending_user_exists = PendingRegistration.objects.filter(pere_username=username).exists()
+
+        exists = activated_user_exists and pending_user_exists
+
         return JsonResponse({'exists': exists})
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
 
 def send_test_email(request):
+    email = request.POST.get('email')
     send_mail(
-        'Test Email Subject',
-        'This is a test email message.',
-        settings.EMAIL_HOST_USER,
-        ['recipient@example.com'],
-        fail_silently=False,
+        'Test Email Subject', 'This is a test email message.',
+        settings.EMAIL_HOST_USER, [email], fail_silently=False,
     )
-    return HttpResponse("Test email sent!")
+    return HttpResponse("E-mail teste enviado!")
 
 @require_POST
 def check_email_view(request):
@@ -296,6 +284,11 @@ def update_first_login_flag(request):
         user_profile.save()
         return JsonResponse({'status': 'success'})
 
+from django.contrib import messages
+from django.contrib.auth.hashers import make_password
+from .models import PendingRegistration
+from .utils import send_confirmation_email, generate_activation_token
+
 def signup_view(request):
     if request.method == 'POST':
         username = request.POST.get('username')
@@ -304,48 +297,81 @@ def signup_view(request):
         password2 = request.POST.get('password2')
 
         if password1 != password2:
-            messages.error(request, 'Passwords do not match.')
+            messages.error(request, 'Senhas não coincidem.')
             return render(request, 'registration/signup.html')
 
-        if User.objects.filter(username=username).exists():
-            messages.error(request, 'Username already exists.')
+        pending_username_exists=PendingRegistration.objects.filter(pere_username=username).exists()
+        pending_email_exists=PendingRegistration.objects.filter(pere_email=email).exists()
+        duplicate_pending_exists=pending_username_exists or pending_email_exists
+        
+        activated_username_exists=User.objects.filter(username=username).exists()
+        activated_email_exists=User.objects.filter(email=email).exists()
+        duplicate_activated_exists=activated_username_exists or activated_email_exists
+        
+        duplicate_exists = duplicate_activated_exists or duplicate_activated_exists
+        
+        if duplicate_exists:
+            messages.error(request, 'Usuário ou e-mail já existe.')
             return render(request, 'registration/signup.html')
 
-        if User.objects.filter(email=email).exists():
-            messages.error(request, 'Email already exists.')
-            return render(request, 'registration/signup.html')
+        activation_token = generate_activation_token()  # Define this function to generate a unique token
+        registration = PendingRegistration(
+            pere_username=username,
+            pere_email=email,
+            pere_hashed_password=make_password(password1),
+            pere_activation_token=activation_token
+        )
+        registration.save()
 
-        user = User.objects.create_user(username=username, email=email, password=password1)
-        login(request, user)
-        messages.success(request, 'Sign up successful.')
-        return redirect('home')  # Redirect to home or another page
+        # Schedule the email task
+        send_confirmation_email_task.delay(registration.id, activation_token, request.get_host())
+        
+        messages.success(request, 'Registro com sucesso. Por favor confirmar seu e-mail.')
+        return render(request, 'registration/signup_done.html')
 
     return render(request, 'registration/signup.html')
+
+def send_test_email(to_email):
+    subject = 'E-mail de Teste'
+    message = 'Este é um e-mail de teste para verificar se o envio está funcionando.'
+    from_email = settings.DEFAULT_FROM_EMAIL
+    
+    send_mail(subject, message, from_email, [to_email])
 
 @login_required
 def settings_view(request):
     if request.method == 'POST':
         if 'update_email' in request.POST:
             email = request.POST.get('email')
+
             user = request.user
             if email and email != user.email:
                 if user.objects.filter(email=email).exists():
-                    messages.error(request, 'Email already in use.')
+                    messages.error(request, 'E-mail já em uso.')
                 else:
                     user.email = email
                     user.save()
                     # Optional: Send confirmation email
                     send_mail(
-                        'Email Updated',
-                        'Your email address has been updated.',
+                        'Atualização de e-mail',
+                        'Seu e-mail foi atualizado.',
                         settings.DEFAULT_FROM_EMAIL,
                         [email],
                         fail_silently=False,
                     )
-                    messages.success(request, 'Email updated successfully.')
+                    messages.success(request, 'E-mail atualizado com sucesso.')
                 return redirect('settings')
+            
+            elif 'send_test_email' in request.POST:
+                # Handle test email sending
+                try:
+                    raise Exception(':)')
+                    send_test_email(request.user.email)
+                    messages.success(request, 'E-mail de teste enviado com sucesso.')
+                except BadHeaderError:
+                    messages.error(request, 'Erro ao enviar o e-mail de teste.')
             else:
-                messages.error(request, 'Invalid email address or email unchanged.')
+                messages.error(request, 'E-mail inválido ou não alterado.')
                 return redirect('settings')
         elif 'change_password' in request.POST:
             return redirect('password_change')
@@ -353,18 +379,31 @@ def settings_view(request):
     return render(request, 'web/settings.html')
 
 
-def confirm_email(request, uidb64, token):
-    uid = force_str(urlsafe_base64_decode(uidb64))
-    user = get_user_model().objects.get(pk=uid)
-    if default_token_generator.check_token(user, token):
-        user.email = user.email
-        user.save()
-        messages.success(request, 'Your email address has been confirmed.')
+def confirm_email(request, token):
+    try:
+        registration = PendingRegistration.objects.get(activation_token=token)
+    except PendingRegistration.DoesNotExist:
+        messages.error(request, 'Link de confirmação inválido.')
+        return redirect('home')
+
+    if registration.pere_is_activated:
+        messages.info(request, 'Conta já ativa.')
         return redirect('login')
-    else:
-        messages.error(request, 'The confirmation link was invalid or has expired.')
-        return redirect('settings')
-    
+
+    user = User(
+        username=registration.pere_username,
+        email=registration.pere_email,
+        password=registration.pere_hashed_password
+    )
+    user.is_active = True
+    user.save()
+
+    registration.pere_is_activated = True
+    registration.save()
+
+    messages.success(request, 'Seu e-mail foi confirmado. Você pode agora logar')
+    return redirect('login')
+
 
 def handle_uploaded_file(f):
     # Save the file
@@ -384,11 +423,11 @@ def validate_file_type(filename):
 @csrf_exempt
 @login_required
 def upload_files_view(request):
+    files = request.FILES.getlist('files')
+    
     if request.method == 'POST':
-        files = request.FILES.getlist('files')
-        
         if not files:
-            return custom_error_response('No files uploaded', 400)
+            return custom_error_response('Nenhum arquivo carregado', 400)
 
         # Get the current user
         user = request.user
@@ -397,7 +436,7 @@ def upload_files_view(request):
         for file in files:
             # Validate file type
             if not validate_file_type(file.name):
-                return custom_error_response(f'Invalid file type: {file.name}', status=400)
+                return custom_error_response(f'Tipo de arquivo inválido: {file.name}', status=400)
 
             # Save the file (assuming Upload model has a `file` field and a `user` foreign key field)
             upload = Upload(
@@ -412,6 +451,12 @@ def upload_files_view(request):
 
         return JsonResponse({'status': 'success'})
 
+    # For GET request, show the file list
+    paginator = Paginator(files, 10)  # Number of files per page
+
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
+    
     # Render the upload page for GET request
     return render(request, 'web/upload.html')
 
@@ -438,13 +483,13 @@ def update_uploaded_files_view(request):
 
             return JsonResponse({'status': 'success'})
         except json.JSONDecodeError:
-            return custom_error_response('Invalid JSON', 400)
+            return custom_error_response('JSON inválido', 400)
         except Upload.DoesNotExist:
-            return custom_error_response('Upload not found', 404)
+            return custom_error_response('Upload não encontrado', 404)
         except Exception as e:
             return custom_error_response(str(e), 400)
         
-    return custom_error_response('Invalid request method', 400)
+    return custom_error_response('Método de requisição inválido', 400)
 
 
 def upload_success_view(request):

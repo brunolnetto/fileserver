@@ -10,13 +10,12 @@
         <label for="file-input">Escolha os arquivos (CSV, XLSX, XLS):</label>
         <input type="file" id="file-input" name="files" multiple accept=".csv, .xlsx, .xls" required class="form-control-file">
     </div>
+    <div id="loading-spinner" class="spinner-border" role="status" style="display: none;">
+        <span class="sr-only">Loading...</span>
+    </div>
     <button type="submit" id="upload-btn" class="upload-btn" disabled>Carregar</button>
     <button type="button" id="reset-button" class="reset-btn ml-2" aria-label="Resetar formulário">Resetar</button>
 </form>
-
-<div id="loading-spinner" class="spinner-border" role="status" style="display: none;">
-    <span class="sr-only">Loading...</span>
-</div>
 
 <div id="progress-container" class="progress mt-3" style="height: 30px;">
     <div id="progress-bar" class="progress-bar bg-success" role="progressbar" style="width: 0%;">0%</div>
@@ -24,74 +23,26 @@
 
 <p id="status-message" class="mt-2">Selecione arquivos para iniciar o upload.</p>
 
-<table id="file-list" class="table mt-4">
+<table id="file-table" class="table mt-4">
     <thead>
         <tr>
             <th><input type="checkbox" id="select-all-files" aria-label="Selecionar todos os arquivos"></th>
             <th>Nome do Arquivo</th>
             <th>Tamanho do Arquivo</th>
-            <th>Status</th>
+            <th class="status-column">Status</th>
             <th>Mensagem de Erro</th>
         </tr>
     </thead>
-    <tbody>
-        <!-- Table rows will be dynamically inserted here -->
+    <tbody id="file-list">
+        {% for file in page_obj.object_list %}
+            <tr id="file-{{ file.name }}">
+                <td><input type="checkbox" class="file-checkbox" data-filename="{{ file.name }}"></td>
+                <td>{{ file.name }}</td>    
+                <td>{{ file.size }} KB</td>
+            </tr>
+        {% endfor %}
     </tbody>
 </table>
-
-<div class="pagination-container mt-3">
-    <nav aria-label="Page navigation">
-        <ul class="pagination justify-content-center">
-            {% if objects.has_previous %}
-                <li class="page-item">
-                    <a class="page-link" href="{% url 'table_view' model_name=model_name %}?page=1" aria-label="Primeira">
-                        <span aria-hidden="true">&laquo;&laquo;</span>
-                    </a>
-                </li>
-                <li class="page-item">
-                    <a class="page-link" href="{% url 'table_view' model_name=model_name %}?page={{ objects.previous_page_number }}" aria-label="Anterior">
-                        <span aria-hidden="true">&laquo;</span>
-                    </a>
-                </li>
-            {% else %}
-                <li class="page-item disabled">
-                    <span class="page-link">&laquo;&laquo;</span>
-                </li>
-                <li class="page-item disabled">
-                    <span class="page-link">&laquo;</span>
-                </li>
-            {% endif %}
-
-            {% for page_num in objects.paginator.page_range %}
-                {% if page_num >= objects.number|add:'-5' and page_num <= objects.number|add:'5' %}
-                    <li class="page-item{% if objects.number == page_num %} active{% endif %}">
-                        <a class="page-link" href="{% url 'table_view' model_name=model_name %}?page={{ page_num }}">{{ page_num }}</a>
-                    </li>
-                {% endif %}
-            {% endfor %}
-
-            {% if objects.has_next %}
-                <li class="page-item">
-                    <a class="page-link" href="{% url 'table_view' model_name=model_name %}?page={{ objects.next_page_number }}" aria-label="Próxima">
-                        <span aria-hidden="true">&raquo;</span>
-                    </a>
-                </li>
-                <li class="page-item">
-                    <a class="page-link" href="{% url 'table_view' model_name=model_name %}?page={{ objects.paginator.num_pages }}" aria-label="Última">
-                        <span aria-hidden="true">&raquo;&raquo;</span>
-                    </a>
-                </li>
-            {% else %}
-                <li class="page-item disabled">
-                    <span class="page-link">&raquo;</span>
-                </li>
-                <li class="page-item disabled">
-                    <span class="page-link">&raquo;&raquo;</span>
-                </li>
-            {% endif %}
-        </ul>
-    </nav>
-</div>
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {
@@ -104,40 +55,49 @@
         const loadingSpinner = document.getElementById('loading-spinner');
         const uploadBtn = document.getElementById('upload-btn');
         const selectAllCheckbox = document.getElementById('select-all-files');
-
+    
+        let uploadedFiles = new Set(); // To keep track of uploaded files
+    
         const setStatusMessage = (message) => {
             statusMessage.textContent = message;
         };
-
+    
         const updateFileRow = (fileName, status, errorMessage = '') => {
             const fileRow = document.getElementById('file-' + fileName);
             if (!fileRow) return; // Skip if file row is not found
-
+    
             const statusIcon = fileRow.querySelector('.status-icon');
+            if (!statusIcon) return; // Skip if status icon is not found
+    
             const errorMessageCell = fileRow.querySelector('.error-message');
             const checkbox = fileRow.querySelector('.file-checkbox');
-
-            statusIcon.classList.remove('bi-arrow-repeat', 'bi-floppy-fill', 'bi-bug');
+    
+            statusIcon.classList.remove('bi-arrow-repeat', 'bi-floppy-fill', 'bi-bug', 'bi-arrow-clockwise'); // Remove all status-related classes
             if (status === 'success') {
                 statusIcon.classList.add('bi', 'bi-floppy-fill');
                 errorMessageCell.textContent = '';
                 checkbox.disabled = true; // Disable checkbox after upload
+                uploadedFiles.add(fileName); // Mark file as uploaded
             } else if (status === 'error') {
                 statusIcon.classList.add('bi', 'bi-bug');
                 errorMessageCell.textContent = errorMessage;
                 checkbox.disabled = false; // Enable checkbox if there's an error
+            } else if (status === 'pending') {
+                statusIcon.classList.add('bi', 'bi-arrow-clockwise');
+                errorMessageCell.textContent = '';
+                checkbox.disabled = false; // Enable checkbox for pending files
             }
-        };
-
+        };        
+    
         const handleUpload = async (file) => {
             const formData = new FormData();
             formData.append('files', file);
-
+    
             return new Promise((resolve, reject) => {
                 const xhr = new XMLHttpRequest();
                 xhr.open('POST', '{% url "upload_files" %}', true);
                 xhr.setRequestHeader('X-CSRFToken', csrftoken);
-
+    
                 xhr.upload.addEventListener('progress', (event) => {
                     if (event.lengthComputable) {
                         const percentComplete = (event.loaded / event.total) * 100;
@@ -145,7 +105,7 @@
                         progressBar.textContent = `${Math.round(percentComplete)}%`;
                     }
                 });
-
+    
                 xhr.onload = () => {
                     try {
                         const response = JSON.parse(xhr.responseText);
@@ -166,28 +126,29 @@
                         reject(new Error('Erro de resposta do servidor.'));
                     }
                 };
-
+    
                 xhr.onerror = () => {
                     updateFileRow(file.name, 'error', 'Erro de rede');
                     setStatusMessage('Erro de rede.');
                     reject(new Error('Erro de rede'));
                 };
-
+    
                 xhr.send(formData);
             });
         };
-
+    
         const uploadSelectedFiles = async () => {
             const selectedFiles = Array.from(document.querySelectorAll('.file-checkbox:checked')).map(checkbox => {
                 const fileName = checkbox.dataset.filename;
                 return Array.from(fileInput.files).find(file => file.name === fileName);
-            }).filter(file => file !== undefined);
-
+            }).filter(file => file !== undefined && !uploadedFiles.has(file.name)); // Filter out already uploaded files
+    
             if (selectedFiles.length === 0) {
                 alert('Por favor, selecione arquivos para upload.');
                 return;
             }
-
+    
+            uploadBtn.disabled = true; // Disable the button while uploading
             loadingSpinner.style.display = 'block'; // Show spinner
             for (let i = 0; i < selectedFiles.length; i++) {
                 await handleUpload(selectedFiles[i]);
@@ -196,81 +157,74 @@
             progressBar.style.width = '0%';
             progressBar.textContent = '0%';
             loadingSpinner.style.display = 'none'; // Hide spinner
+            uploadBtn.disabled = false; // Enable the button after all uploads are done
         };
-
+    
+        const updateSelectAllCheckbox = () => {
+            const checkboxes = document.querySelectorAll('#file-list .file-checkbox');
+            const checkedCheckboxes = document.querySelectorAll('#file-list .file-checkbox:checked');
+            selectAllCheckbox.checked = checkboxes.length > 0 && checkboxes.length === checkedCheckboxes.length;
+        };
+    
         fileInput.addEventListener('change', () => {
-            fileList.innerHTML = '';
             const files = fileInput.files;
             for (const file of files) {
-                const listItem = document.createElement('tr');
-                listItem.id = 'file-' + file.name;
-                listItem.innerHTML = `
-                    <td><input type="checkbox" class="file-checkbox" data-filename="${file.name}"></td>
-                    <td>${file.name}</td>
-                    <td>${(file.size / 1024).toFixed(2)} KB</td>
-                    <td><i class="status-icon bi bi-arrow-repeat"></i></td>
-                    <td class="error-message"></td>
-                `;
-                fileList.appendChild(listItem);
+                // Check if the file already exists in the table
+                if (!document.getElementById('file-' + file.name)) {
+                    const listItem = document.createElement('tr');
+                    listItem.id = 'file-' + file.name;
+                    listItem.innerHTML = `
+                        <td><input type="checkbox" class="file-checkbox" data-filename="${file.name}"></td>
+                        <td>${file.name}</td>
+                        <td>${formatFileSize(file.size)}</td>
+                        <td><i class="status-icon bi bi-arrow-clockwise"></i></td>
+                        <td class="error-message"></td>
+                    `;
+                    fileList.appendChild(listItem);
+                }
             }
             uploadBtn.disabled = files.length === 0; // Enable upload button if files are selected
-        });
-
+            updateSelectAllCheckbox(); // Update "Select all" checkbox state
+        });        
+    
+        // Function to format file size into a human-readable format
+        function formatFileSize(bytes) {
+            const units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB'];
+            if (bytes === 0) return '0 B';
+    
+            const i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
+            return (bytes / Math.pow(1024, i)).toFixed(2) + ' ' + units[i];
+        }
+    
         document.getElementById('upload-btn').addEventListener('click', (event) => {
             event.preventDefault();
             uploadSelectedFiles();
         });
-
+    
         document.getElementById('reset-button').addEventListener('click', () => {
             fileInput.value = '';
-            fileList.innerHTML = '';
+            fileList.innerHTML = ''; // This clears only the tbody, not the thead
             progressBar.style.width = '0%';
             progressBar.textContent = '0%';
             setStatusMessage('Selecione arquivos para iniciar o upload.');
             uploadBtn.disabled = true; // Disable upload button
+            uploadedFiles.clear(); // Clear uploaded files tracker
+            selectAllCheckbox.checked = false; // Uncheck "Select all" checkbox
         });
-
+    
         selectAllCheckbox.addEventListener('change', () => {
-            document.querySelectorAll('.file-checkbox').forEach(checkbox => {
-                checkbox.checked = selectAllCheckbox.checked;
+            const isChecked = selectAllCheckbox.checked;
+            document.querySelectorAll('#file-list .file-checkbox').forEach(checkbox => {
+                checkbox.checked = isChecked;
             });
         });
-    });
+    
+        fileList.addEventListener('change', (event) => {
+            if (event.target.classList.contains('file-checkbox')) {
+                updateSelectAllCheckbox(); // Update "Select all" checkbox state
+            }
+        });
+    });        
 </script>
-
-<style>
-    .upload-btn {
-        background-color: #007bff;
-        color: white;
-        border: none;
-        padding: 0.5rem 1rem;
-        cursor: pointer;
-    }
-
-    .upload-btn:disabled {
-        background-color: #c0c0c0;
-    }
-
-    .reset-btn {
-        background-color: #dc3545;
-        color: white;
-        border: none;
-        padding: 0.5rem 1rem;
-        cursor: pointer;
-    }
-
-    .reset-btn:hover {
-        background-color: #c82333;
-    }
-
-    .progress-bar {
-        transition: width 0.4s ease;
-    }
-
-    .pagination-container {
-        display: flex;
-        justify-content: center;
-    }
-</style>
 
 {% endblock %}
