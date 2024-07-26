@@ -80,5 +80,8 @@ build: ## Build the application. Usage: make build
 down: ## Down the application. Usage: make down
 	docker-compose down
 
+restart: ## Restart the application. Usage: make restart
+	docker-compose restart 
+
 up: ## Up the application. Usage: make up
 	docker-compose up --build -d
