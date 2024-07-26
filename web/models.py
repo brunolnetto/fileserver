@@ -36,6 +36,17 @@ class Upload(Model):
         return 'uplo_file'
     
     @staticmethod
+    def get_visible_columns():
+        return [
+            'id',
+            'uplo_file',
+            'uplo_uploaded_at',
+            'uplo_filename',
+            'uplo_filesize',
+            'uplo_description'
+        ]
+    
+    @staticmethod
     def get_column_labels():
         """Returns a dictionary of column names and their labels."""
         return {

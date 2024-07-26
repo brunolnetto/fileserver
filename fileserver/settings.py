@@ -61,7 +61,7 @@ ALLOWED_HOSTS = ['*']
 
 # Add the ngrok URL to CSRF_TRUSTED_ORIGINS
 CSRF_TRUSTED_ORIGINS = [
-    'https://cba9-191-7-29-136.ngrok-free.app',
+    'https://875b-191-7-29-136.ngrok-free.app',
 ]
 
 # Session expires after 5 minutes of inactivity

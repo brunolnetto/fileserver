@@ -1,155 +1,276 @@
 {% extends 'web/base.html' %}
 
-{% block title %}File Upload{% endblock %}
+{% block title %}Carregar arquivo{% endblock %}
 
 {% block content %}
-<h1 class="mb-4">File Upload</h1>
+<h1 class="mb-4">Carregar arquivo</h1>
 <form id="upload-form" method="post" enctype="multipart/form-data" action="{% url 'upload_files' %}">
     {% csrf_token %}
     <div class="form-group">
-        <label for="file-input">Choose files (CSV, XLSX, XLS):</label>
+        <label for="file-input">Escolha os arquivos (CSV, XLSX, XLS):</label>
         <input type="file" id="file-input" name="files" multiple accept=".csv, .xlsx, .xls" required class="form-control-file">
     </div>
-    <button type="submit" class="upload-btn">Upload</button>
-    <button type="button" id="reset-button" class="reset-btn ml-2">Reset</button>
+    <button type="submit" id="upload-btn" class="upload-btn" disabled>Carregar</button>
+    <button type="button" id="reset-button" class="reset-btn ml-2" aria-label="Resetar formulário">Resetar</button>
 </form>
 
+<div id="loading-spinner" class="spinner-border" role="status" style="display: none;">
+    <span class="sr-only">Loading...</span>
+</div>
 
 <div id="progress-container" class="progress mt-3" style="height: 30px;">
     <div id="progress-bar" class="progress-bar bg-success" role="progressbar" style="width: 0%;">0%</div>
 </div>
 
-<p id="status-message" class="mt-2"></p>
+<p id="status-message" class="mt-2">Selecione arquivos para iniciar o upload.</p>
+
+<table id="file-list" class="table mt-4">
+    <thead>
+        <tr>
+            <th><input type="checkbox" id="select-all-files" aria-label="Selecionar todos os arquivos"></th>
+            <th>Nome do Arquivo</th>
+            <th>Tamanho do Arquivo</th>
+            <th>Status</th>
+            <th>Mensagem de Erro</th>
+        </tr>
+    </thead>
+    <tbody>
+        <!-- Table rows will be dynamically inserted here -->
+    </tbody>
+</table>
+
+<div class="pagination-container mt-3">
+    <nav aria-label="Page navigation">
+        <ul class="pagination justify-content-center">
+            {% if objects.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="{% url 'table_view' model_name=model_name %}?page=1" aria-label="Primeira">
+                        <span aria-hidden="true">&laquo;&laquo;</span>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="{% url 'table_view' model_name=model_name %}?page={{ objects.previous_page_number }}" aria-label="Anterior">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+            {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">&laquo;&laquo;</span>
+                </li>
+                <li class="page-item disabled">
+                    <span class="page-link">&laquo;</span>
+                </li>
+            {% endif %}
+
+            {% for page_num in objects.paginator.page_range %}
+                {% if page_num >= objects.number|add:'-5' and page_num <= objects.number|add:'5' %}
+                    <li class="page-item{% if objects.number == page_num %} active{% endif %}">
+                        <a class="page-link" href="{% url 'table_view' model_name=model_name %}?page={{ page_num }}">{{ page_num }}</a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+
+            {% if objects.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="{% url 'table_view' model_name=model_name %}?page={{ objects.next_page_number }}" aria-label="Próxima">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="{% url 'table_view' model_name=model_name %}?page={{ objects.paginator.num_pages }}" aria-label="Última">
+                        <span aria-hidden="true">&raquo;&raquo;</span>
+                    </a>
+                </li>
+            {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">&raquo;</span>
+                </li>
+                <li class="page-item disabled">
+                    <span class="page-link">&raquo;&raquo;</span>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+</div>
+
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', () => {
         const uploadForm = document.getElementById('upload-form');
         const fileInput = document.getElementById('file-input');
         const progressBar = document.getElementById('progress-bar');
         const statusMessage = document.getElementById('status-message');
         const csrftoken = document.querySelector('input[name="csrfmiddlewaretoken"]').value;
-    
-        // Handle file upload
-        if (uploadForm) {
-            uploadForm.addEventListener('submit', function(event) {
-                event.preventDefault();
-                const files = fileInput ? fileInput.files : [];
-                if (files.length === 0) {
-                    alert('Please select files to upload.');
-                    return;
-                }
-    
-                const formData = new FormData();
-                for (let i = 0; i < files.length; i++) {
-                    formData.append('files', files[i]);
-                }
-    
+        const fileList = document.getElementById('file-list');
+        const loadingSpinner = document.getElementById('loading-spinner');
+        const uploadBtn = document.getElementById('upload-btn');
+        const selectAllCheckbox = document.getElementById('select-all-files');
+
+        const setStatusMessage = (message) => {
+            statusMessage.textContent = message;
+        };
+
+        const updateFileRow = (fileName, status, errorMessage = '') => {
+            const fileRow = document.getElementById('file-' + fileName);
+            if (!fileRow) return; // Skip if file row is not found
+
+            const statusIcon = fileRow.querySelector('.status-icon');
+            const errorMessageCell = fileRow.querySelector('.error-message');
+            const checkbox = fileRow.querySelector('.file-checkbox');
+
+            statusIcon.classList.remove('bi-arrow-repeat', 'bi-floppy-fill', 'bi-bug');
+            if (status === 'success') {
+                statusIcon.classList.add('bi', 'bi-floppy-fill');
+                errorMessageCell.textContent = '';
+                checkbox.disabled = true; // Disable checkbox after upload
+            } else if (status === 'error') {
+                statusIcon.classList.add('bi', 'bi-bug');
+                errorMessageCell.textContent = errorMessage;
+                checkbox.disabled = false; // Enable checkbox if there's an error
+            }
+        };
+
+        const handleUpload = async (file) => {
+            const formData = new FormData();
+            formData.append('files', file);
+
+            return new Promise((resolve, reject) => {
                 const xhr = new XMLHttpRequest();
                 xhr.open('POST', '{% url "upload_files" %}', true);
                 xhr.setRequestHeader('X-CSRFToken', csrftoken);
-    
-                xhr.upload.addEventListener('progress', function(event) {
+
+                xhr.upload.addEventListener('progress', (event) => {
                     if (event.lengthComputable) {
                         const percentComplete = (event.loaded / event.total) * 100;
-                        progressBar.style.width = percentComplete + '%';
-                        progressBar.textContent = Math.round(percentComplete) + '%';
+                        progressBar.style.width = `${percentComplete}%`;
+                        progressBar.textContent = `${Math.round(percentComplete)}%`;
                     }
                 });
-    
-                xhr.onload = function() {
-                    if (xhr.status === 200) {
-                        statusMessage.textContent = 'Files uploaded successfully.';
-                        progressBar.style.width = '0%';
-                        progressBar.textContent = '0%';
-                        uploadForm.reset();
-                    } else {
-                        statusMessage.textContent = 'Error uploading files. Status: ' + xhr.status;
-                        console.error('Error:', xhr.responseText);
+
+                xhr.onload = () => {
+                    try {
+                        const response = JSON.parse(xhr.responseText);
+                        if (xhr.status === 200 && response.status === 'success') {
+                            updateFileRow(file.name, 'success');
+                            setStatusMessage('Arquivo carregado com sucesso.');
+                            resolve();
+                        } else {
+                            const errorMsg = response.errors ? response.errors.join(', ') : 'Erro desconhecido';
+                            updateFileRow(file.name, 'error', errorMsg);
+                            setStatusMessage(`Erro: ${errorMsg}`);
+                            reject(new Error(errorMsg));
+                        }
+                    } catch (e) {
+                        console.error('Falha ao analisar a resposta JSON:', xhr.responseText);
+                        updateFileRow(file.name, 'error', 'Resposta do servidor inválida');
+                        setStatusMessage('Erro de resposta do servidor.');
+                        reject(new Error('Erro de resposta do servidor.'));
                     }
                 };
-    
-                xhr.onerror = function() {
-                    statusMessage.textContent = 'Error uploading files.';
-                    console.error('Network Error');
+
+                xhr.onerror = () => {
+                    updateFileRow(file.name, 'error', 'Erro de rede');
+                    setStatusMessage('Erro de rede.');
+                    reject(new Error('Erro de rede'));
                 };
-    
+
                 xhr.send(formData);
             });
-        }
-    
-        const resetButton = document.getElementById('reset-button');
-        if (resetButton) {
-            resetButton.addEventListener('click', function() {
-                if (uploadForm) {
-                    uploadForm.reset();
-                }
-                if (progressBar) {
-                    progressBar.style.width = '0%';
-                    progressBar.textContent = '0%';
-                }
-                if (statusMessage) {
-                    statusMessage.textContent = '';
-                }
-            });
-        }
-    
-        const updateForm = document.getElementById('update-form');
-        const updateStatusMessage = document.getElementById('update-status-message');
-    
-        document.querySelectorAll('.edit-button').forEach(button => {
-            button.addEventListener('click', function() {
-                const fileId = this.getAttribute('data-file-id');
-                const row = this.closest('tr');
-                const filename = row ? row.querySelector('td:nth-child(2)').textContent : '';
-    
-                const fileIdInput = document.getElementById('file-id');
-                const newFilenameInput = document.getElementById('new-filename');
-    
-                if (fileIdInput) fileIdInput.value = fileId;
-                if (newFilenameInput) newFilenameInput.value = filename;
+        };
+
+        const uploadSelectedFiles = async () => {
+            const selectedFiles = Array.from(document.querySelectorAll('.file-checkbox:checked')).map(checkbox => {
+                const fileName = checkbox.dataset.filename;
+                return Array.from(fileInput.files).find(file => file.name === fileName);
+            }).filter(file => file !== undefined);
+
+            if (selectedFiles.length === 0) {
+                alert('Por favor, selecione arquivos para upload.');
+                return;
+            }
+
+            loadingSpinner.style.display = 'block'; // Show spinner
+            for (let i = 0; i < selectedFiles.length; i++) {
+                await handleUpload(selectedFiles[i]);
+            }
+            setStatusMessage('Todos os arquivos selecionados foram processados.');
+            progressBar.style.width = '0%';
+            progressBar.textContent = '0%';
+            loadingSpinner.style.display = 'none'; // Hide spinner
+        };
+
+        fileInput.addEventListener('change', () => {
+            fileList.innerHTML = '';
+            const files = fileInput.files;
+            for (const file of files) {
+                const listItem = document.createElement('tr');
+                listItem.id = 'file-' + file.name;
+                listItem.innerHTML = `
+                    <td><input type="checkbox" class="file-checkbox" data-filename="${file.name}"></td>
+                    <td>${file.name}</td>
+                    <td>${(file.size / 1024).toFixed(2)} KB</td>
+                    <td><i class="status-icon bi bi-arrow-repeat"></i></td>
+                    <td class="error-message"></td>
+                `;
+                fileList.appendChild(listItem);
+            }
+            uploadBtn.disabled = files.length === 0; // Enable upload button if files are selected
+        });
+
+        document.getElementById('upload-btn').addEventListener('click', (event) => {
+            event.preventDefault();
+            uploadSelectedFiles();
+        });
+
+        document.getElementById('reset-button').addEventListener('click', () => {
+            fileInput.value = '';
+            fileList.innerHTML = '';
+            progressBar.style.width = '0%';
+            progressBar.textContent = '0%';
+            setStatusMessage('Selecione arquivos para iniciar o upload.');
+            uploadBtn.disabled = true; // Disable upload button
+        });
+
+        selectAllCheckbox.addEventListener('change', () => {
+            document.querySelectorAll('.file-checkbox').forEach(checkbox => {
+                checkbox.checked = selectAllCheckbox.checked;
             });
         });
-    
-        if (updateForm) {
-            updateForm.addEventListener('submit', function(event) {
-                event.preventDefault();
-                const fileId = document.getElementById('file-id') ? document.getElementById('file-id').value : '';
-                const newFilename = document.getElementById('new-filename') ? document.getElementById('new-filename').value : '';
-    
-                fetch('/update-uploads/', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': csrftoken
-                    },
-                    body: JSON.stringify({ file_id: fileId, new_filename: newFilename })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        if (updateStatusMessage) {
-                            updateStatusMessage.textContent = 'File updated successfully.';
-                        }
-                        const row = document.querySelector(`tr[data-file-id="${fileId}"]`);
-                        if (row) {
-                            row.querySelector('td:nth-child(2)').textContent = newFilename;
-                        }
-                    } else {
-                        if (updateStatusMessage) {
-                            updateStatusMessage.textContent = 'Error: ' + data.message;
-                        }
-                        console.error('Error:', data.message);
-                    }
-                })
-                .catch(error => {
-                    if (updateStatusMessage) {
-                        updateStatusMessage.textContent = 'Error updating file.';
-                    }
-                    console.error('Network Error:', error);
-                });
-            });
-        }
     });
 </script>
 
+<style>
+    .upload-btn {
+        background-color: #007bff;
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        cursor: pointer;
+    }
+
+    .upload-btn:disabled {
+        background-color: #c0c0c0;
+    }
+
+    .reset-btn {
+        background-color: #dc3545;
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        cursor: pointer;
+    }
+
+    .reset-btn:hover {
+        background-color: #c82333;
+    }
+
+    .progress-bar {
+        transition: width 0.4s ease;
+    }
+
+    .pagination-container {
+        display: flex;
+        justify-content: center;
+    }
+</style>
 
 {% endblock %}

@@ -241,6 +241,15 @@ def login_view(request):
             return render(request, 'registration/login.html', {'error': 'Invalid credentials'})
     return render(request, 'registration/login.html')
 
+@csrf_exempt
+def file_list(request):
+    files = Upload.objects.all()  # Replace with your query
+    paginator = Paginator(files, 10)  # Show 10 files per page
+
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    return render(request, 'your_template.html', {'page_obj': page_obj})
 
 def logout_view(request):
     logout(request)

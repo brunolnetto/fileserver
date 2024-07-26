@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <title>{% block title %}Meu app{% endblock %}</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">  
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
@@ -22,14 +23,14 @@
             aria-expanded="false" 
             aria-label="Toggle navigation"
         >
-            <span class="navbar-toggler-icon"></span>
+        <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ml-auto">
                 <!-- Other navbar items -->
                 {% if user.is_authenticated %}
                     <li class="nav-item">
-                        <button id="theme-toggle" class="theme-toggle-btn">
+                        <button id="theme-toggle" class="theme-toggle-btn" aria-label="Toggle theme">
                             <i class="fa fa-sun"></i> <!-- Sun icon for light mode -->
                             <i class="fa fa-moon"></i> <!-- Moon icon for dark mode -->
                         </button>
@@ -48,37 +49,34 @@
     <div class="sidebar-container">
         <nav id="sidebar" class="sidebar collapsed">
             <div class="home-button">
-                <a href="{% url 'home' %}" class="{% if request.path == '/home/' %}active{% endif %}">
+                <a href="{% url 'home' %}">
                     <i class="bi bi-house"></i>
-                    <span>Página inicial</span> <!-- Ensure this is included -->
+                    <span>Página inicial</span>
                 </a>
             </div>
             {% if user.is_authenticated %}
             <div class="other-icons">
-                <a href="{% url 'upload_files' %}" class="{% if request.path == '/upload_files/' %}active{% endif %}">
+                <a href="{% url 'upload_files' %}">
                     <i class="bi bi-upload"></i>
                     <span>Carregar</span>
                 </a>
-                <a href="{% url 'table_view' model_name='Upload' %}" class="{% if request.path == '/table_view/' %}active{% endif %}">
+                <a href="{% url 'table_view' model_name='Upload' %}">
                     <i class="bi bi-table"></i>
                     <span>Consultar</span>
                 </a>
             </div>
             <div class="sidebar-bottom">
-                
-                <a href="{% url 'settings' %}" class="settings">
+                <a href="{% url 'settings' %}">
                     <i class="bi bi-gear"></i>
                     <span>Configurações</span>
                 </a>
-                <a class="logout">
-                    <form id="logout-form" method="post" action="{% url 'logout' %}" style="display:none;">
-                        {% csrf_token %}
-                    </form>
-                    <a href="#" onclick="document.getElementById('logout-form').submit();">
-                        <i class="bi bi-box-arrow-right"></i>
-                        <span>Desconectar</span>
-                    </a>
+                <a href="#" onclick="document.getElementById('logout-form').submit();">
+                    <i class="bi bi-box-arrow-right"></i>
+                    <span>Desconectar</span>
                 </a>
+                <form id="logout-form" method="post" action="{% url 'logout' %}" style="display:none;">
+                    {% csrf_token %}
+                </form>
             </div>
             {% endif %}
         </nav>
@@ -90,32 +88,44 @@
     
 
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            var sidebarContainer = document.querySelector('.sidebar-container');
-            var sidebar = document.getElementById('sidebar');
+        var sidebarContainer = document.querySelector('.sidebar-container');
+        var sidebar = document.getElementById('sidebar');
 
-            function checkMouseProximity(event) {
-                if (event.clientX < 100) {
-                    sidebar.classList.remove('collapsed');
-                    sidebar.classList.add('expanded');
-                } else {
-                    sidebar.classList.add('collapsed');
-                    sidebar.classList.remove('expanded');
-                }
-            }
+        // Debounce function to limit the rate at which checkMouseProximity is called
+        function debounce(func, wait) {
+            let timeout;
+            return function(...args) {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(this, args), wait);
+            };
+        }
 
-            window.addEventListener('mousemove', checkMouseProximity);
-
-            sidebarContainer.addEventListener('mouseenter', function() {
+        // Improved mouse proximity check with debouncing
+        function checkMouseProximity(event) {
+            if (event.clientX < 100) {
                 sidebar.classList.remove('collapsed');
                 sidebar.classList.add('expanded');
-            });
-            sidebarContainer.addEventListener('mouseleave', function(event) {
-                if (window.innerWidth - event.clientX > 100) {
-                    sidebar.classList.add('collapsed');
-                    sidebar.classList.remove('expanded');
-                }
-            });
+            } else {
+                sidebar.classList.add('collapsed');
+                sidebar.classList.remove('expanded');
+            }
+        }
+
+        // Apply debounce to the proximity check
+        const debouncedCheckMouseProximity = debounce(checkMouseProximity, 100);
+
+        window.addEventListener('mousemove', debouncedCheckMouseProximity);
+
+        sidebarContainer.addEventListener('mouseenter', function() {
+            sidebar.classList.remove('collapsed');
+            sidebar.classList.add('expanded');
+        });
+
+        sidebarContainer.addEventListener('mouseleave', function(event) {
+            if (window.innerWidth - event.clientX > 100) {
+                sidebar.classList.add('collapsed');
+                sidebar.classList.remove('expanded');
+            }
         });
 
         document.addEventListener('DOMContentLoaded', function() {

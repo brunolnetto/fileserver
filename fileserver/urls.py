@@ -44,8 +44,8 @@ swagger_urlpatterns = [
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', include('web.urls')),
     path('api/', include('api.urls')),
+    path('', include('web.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) \
     + swagger_urlpatterns
 

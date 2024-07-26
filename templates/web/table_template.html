@@ -40,10 +40,15 @@
                         {% with editable_columns=obj.get_editable_columns %}
                             {% for field in fields %}
                                 <td 
-                                    class="{% if field.name in editable_columns %}editable{% endif %}"
+                                    class="{% if field.name in editable_columns %}editable{% endif %} {% if field.name == 'filename' %}filename-cell{% endif %}"
                                     data-field="{{ field.name }}"
+                                    {% if field.name == 'filename' %}data-filename="{{ obj|get_field_value:field.name }}"{% endif %}
                                 >
-                                    {{ obj|get_field_value:field.name }}
+                                    {% if field.name == 'filename' %}
+                                        {{ obj|get_field_value:field.name|truncatechars:20 }} <!-- Truncate filename to 20 characters -->
+                                    {% else %}
+                                        {{ obj|get_field_value:field.name }}
+                                    {% endif %}
                                 </td>
                             {% endfor %}
                             <td>
@@ -58,7 +63,7 @@
                         <td colspan="{{ column_labels|length }}">Não encontramos registros</td>
                     </tr>
                 {% endfor %}
-            </tbody>
+            </tbody>            
         </table>
     </form>
     {% else %}
@@ -69,6 +74,8 @@
 <div class="pagination-container mt-3">
     <nav aria-label="Page navigation">
         <ul class="pagination justify-content-center">
+
+            <!-- First and Previous Page Links -->
             {% if objects.has_previous %}
                 <li class="page-item">
                     <a class="page-link" href="{% url 'table_view' model_name=model_name %}?page=1" aria-label="First">
@@ -89,12 +96,16 @@
                 </li>
             {% endif %}
 
+            <!-- Page Number Links -->
             {% for page_num in objects.paginator.page_range %}
-                <li class="page-item{% if objects.number == page_num %} active{% endif %}">
-                    <a class="page-link" href="{% url 'table_view' model_name=model_name %}?page={{ page_num }}">{{ page_num }}</a>
-                </li>
+                {% if page_num >= objects.number|add:'-5' and page_num <= objects.number|add:'5' %}
+                    <li class="page-item{% if objects.number == page_num %} active{% endif %}">
+                        <a class="page-link" href="{% url 'table_view' model_name=model_name %}?page={{ page_num }}">{{ page_num }}</a>
+                    </li>
+                {% endif %}
             {% endfor %}
 
+            <!-- Next and Last Page Links -->
             {% if objects.has_next %}
                 <li class="page-item">
                     <a class="page-link" href="{% url 'table_view' model_name=model_name %}?page={{ objects.next_page_number }}" aria-label="Next">
@@ -118,178 +129,166 @@
     </nav>
 </div>
 
+
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const table = document.getElementById('data-table');
-    const deleteButton = document.querySelector('.custom-button');
-    const selectAllCheckbox = document.getElementById('select-all');
-    const itemSelectCheckboxes = table.querySelectorAll('.item-select');
-    const csrfToken = document.querySelector('input[name="csrfmiddlewaretoken"]').value;
+    document.addEventListener('DOMContentLoaded', function() {
+        const table = document.getElementById('data-table');
+        const deleteButton = document.querySelector('.custom-button');
+        const selectAllCheckbox = document.getElementById('select-all');
+        const itemSelectCheckboxes = table.querySelectorAll('.item-select');
+        const csrfToken = document.querySelector('input[name="csrfmiddlewaretoken"]').value;
+        const saveButton = document.getElementById('save-button');
+        const modelName = "{{ model_name }}";
+        
+        // Sort Table
+        const headers = table.querySelectorAll('th.sortable');
+        let currentSortField = null;
+        let currentSortOrder = 'asc';
     
-    const editButtons = document.querySelectorAll('.btn-edit');
-    const saveButton = document.getElementById('save-button');
-    const modelName = "{{ model_name }}";
-
-    const headers = table.querySelectorAll('th.sortable');
-    let currentSortField = null;
-    let currentSortOrder = 'asc';
-
-    headers.forEach(header => {
-        header.addEventListener('click', function() {
-            const field = this.getAttribute('data-field');
-            if (currentSortField === field) {
-                // Toggle sort order
-                currentSortOrder = currentSortOrder === 'asc' ? 'desc' : 'asc';
-            } else {
-                // New sort field
-                currentSortField = field;
-                currentSortOrder = 'asc';
-            }
-
-            sortTable(field, currentSortOrder);
-            updateSortIndicators();
-        });
-    });
-
-    function sortTable(field, order) {
-        const rows = Array.from(table.querySelectorAll('tbody tr'));
-        rows.sort((a, b) => {
-            const cellA = a.querySelector(`[data-field="${field}"]`).textContent.trim();
-            const cellB = b.querySelector(`[data-field="${field}"]`).textContent.trim();
-
-            if (order === 'asc') {
-                return cellA.localeCompare(cellB, undefined, { numeric: true });
-            } else {
-                return cellB.localeCompare(cellA, undefined, { numeric: true });
-            }
-        });
-
-        const tbody = table.querySelector('tbody');
-        rows.forEach(row => tbody.appendChild(row));
-    }
-
-    function updateSortIndicators() {
         headers.forEach(header => {
-            header.querySelector('.sort-indicator').classList.remove('asc', 'desc');
-            if (header.getAttribute('data-field') === currentSortField) {
-                header.querySelector('.sort-indicator').classList.add(currentSortOrder);
-            }
-        });
-    }
-
-    editButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            const row = this.closest('tr');
-            const cells = row.querySelectorAll('.editable');
-            const isEditing = this.querySelector('i').classList.contains('bi-pencil');
-            
-            cells.forEach(cell => {
-                if (isEditing) {
-                    cell.contentEditable = true;
-                    cell.classList.add('editable-mode');
+            header.addEventListener('click', function() {
+                const field = this.getAttribute('data-field');
+                if (currentSortField === field) {
+                    currentSortOrder = currentSortOrder === 'asc' ? 'desc' : 'asc';
                 } else {
-                    cell.contentEditable = false;
-                    cell.classList.remove('editable-mode');
+                    currentSortField = field;
+                    currentSortOrder = 'asc';
+                }
+    
+                sortTable(field, currentSortOrder);
+                updateSortIndicators();
+            });
+        });
+    
+        function sortTable(field, order) {
+            const rows = Array.from(table.querySelectorAll('tbody tr'));
+            rows.sort((a, b) => {
+                const cellA = a.querySelector(`[data-field="${field}"]`).textContent.trim();
+                const cellB = b.querySelector(`[data-field="${field}"]`).textContent.trim();
+    
+                if (order === 'asc') {
+                    return cellA.localeCompare(cellB, undefined, { numeric: true });
+                } else {
+                    return cellB.localeCompare(cellA, undefined, { numeric: true });
                 }
             });
-
-            if (isEditing) {
-                this.querySelector('i').classList.remove('bi-pencil');
-                this.querySelector('i').classList.add('bi-save');
-                this.setAttribute('title', 'Save changes');
-            } else {
-                this.querySelector('i').classList.remove('bi-save');
-                this.querySelector('i').classList.add('bi-pencil');
-                this.setAttribute('title', 'Edit');
-            }
-        });
-    });
-
-    saveButton.addEventListener('click', function() {
-        const rows = document.querySelectorAll('#data-table tbody tr');
-        const updatedData = [];
-        
-        rows.forEach(row => {
-            const cells = row.querySelectorAll('.editable');
-            const id = row.getAttribute('data-id');
-            
-            if (id) {
-                const data = { id: id };
-                cells.forEach(cell => {
-                    const fieldName = cell.getAttribute('data-field');
-                    const fieldValue = cell.textContent.trim();
-
-                    if (fieldName) {
-                        data[fieldName] = fieldValue;
-                        console.log(`Field: ${fieldName}, Value: ${fieldValue}`);
-                    } else {
-                        console.warn('No data-field attribute found on cell');
-                    }
-                });
-                updatedData.push(data);
-            }
-        });
     
-        const xhr = new XMLHttpRequest();
-        const updateUrl = "{% url 'update_data' model_name=model_name %}";
-    
-        xhr.open('POST', updateUrl, true);
-        xhr.setRequestHeader('X-CSRFToken', csrfToken);
-        xhr.setRequestHeader('Content-Type', 'application/json;charset=UTF-8');
-    
-        xhr.onreadystatechange = function() {
-            if (xhr.readyState === XMLHttpRequest.DONE) {
-                if (xhr.status === 200) {
-                    alert('Changes saved successfully.');
-                } else {
-                    alert('Error saving changes.');
-                }
-            }
-        };
-    
-        xhr.send(JSON.stringify({ updates: updatedData }));
-    });
-    
-
-    // Handle select all checkbox
-    selectAllCheckbox.addEventListener('change', function() {
-        itemSelectCheckboxes.forEach(checkbox => {
-            checkbox.checked = this.checked;
-        });
-    });
-
-    // Handle delete button
-    deleteButton.addEventListener('click', function() {
-        const selectedIds = Array.from(itemSelectCheckboxes)
-            .filter(checkbox => checkbox.checked)
-            .map(checkbox => checkbox.getAttribute('data-id'));
-
-        if (selectedIds.length === 0) {
-            alert('Please select at least one item to delete.');
-            return;
+            const tbody = table.querySelector('tbody');
+            rows.forEach(row => tbody.appendChild(row));
         }
-
-        const xhr = new XMLHttpRequest();
-        const deleteUrl = "{% url 'delete_selected_data' model_name=model_name %}";
-
-        xhr.open('POST', deleteUrl, true);
-
-        xhr.setRequestHeader('X-CSRFToken', csrfToken);
-        xhr.setRequestHeader('Content-Type', 'application/json;charset=UTF-8');
-
-        xhr.onreadystatechange = function() {
-            if (xhr.readyState === XMLHttpRequest.DONE) {
-                if (xhr.status === 200) {
-                    alert('Items deleted successfully.');
-                    location.reload(); // Refresh the page to reflect changes
-                } else {
-                    alert('Error deleting items.');
+    
+        function updateSortIndicators() {
+            headers.forEach(header => {
+                header.querySelector('.sort-indicator').classList.remove('asc', 'desc');
+                if (header.getAttribute('data-field') === currentSortField) {
+                    header.querySelector('.sort-indicator').classList.add(currentSortOrder);
                 }
+            });
+        }
+    
+        // Edit and Save Buttons
+        const editButtons = document.querySelectorAll('.btn-edit');
+    
+        editButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const row = this.closest('tr');
+                const cells = row.querySelectorAll('.editable');
+                const isEditing = this.querySelector('i').classList.contains('bi-pencil');
+                
+                cells.forEach(cell => {
+                    cell.contentEditable = isEditing;
+                    cell.classList.toggle('editable-mode', isEditing);
+                });
+    
+                const icon = this.querySelector('i');
+                if (isEditing) {
+                    icon.classList.replace('bi-pencil', 'bi-save');
+                    this.setAttribute('title', 'Save changes');
+                } else {
+                    icon.classList.replace('bi-save', 'bi-pencil');
+                    this.setAttribute('title', 'Edit');
+                }
+            });
+        });
+    
+        saveButton.addEventListener('click', function() {
+            const rows = document.querySelectorAll('#data-table tbody tr');
+            const updatedData = [];
+            
+            rows.forEach(row => {
+                const cells = row.querySelectorAll('.editable');
+                const id = row.getAttribute('data-id');
+                
+                if (id) {
+                    const data = { id: id };
+                    cells.forEach(cell => {
+                        const fieldName = cell.getAttribute('data-field');
+                        const fieldValue = cell.textContent.trim();
+    
+                        if (fieldName) {
+                            data[fieldName] = fieldValue;
+                        }
+                    });
+                    updatedData.push(data);
+                }
+            });
+        
+            const xhr = new XMLHttpRequest();
+            const updateUrl = "{% url 'update_data' model_name=model_name %}";
+        
+            xhr.open('POST', updateUrl, true);
+            xhr.setRequestHeader('X-CSRFToken', csrfToken);
+            xhr.setRequestHeader('Content-Type', 'application/json;charset=UTF-8');
+        
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    if (xhr.status === 200) {
+                        alert('Changes saved successfully.');
+                    } else {
+                        alert('Error saving changes.');
+                    }
+                }
+            };
+        
+            xhr.send(JSON.stringify({ updates: updatedData }));
+        });
+    
+        // Handle select all checkbox
+        selectAllCheckbox.addEventListener('change', function() {
+            itemSelectCheckboxes.forEach(checkbox => checkbox.checked = this.checked);
+        });
+    
+        // Handle delete button
+        deleteButton.addEventListener('click', function() {
+            const selectedIds = Array.from(itemSelectCheckboxes)
+                .filter(checkbox => checkbox.checked)
+                .map(checkbox => checkbox.getAttribute('data-id'));
+    
+            if (selectedIds.length === 0) {
+                alert('Please select at least one item to delete.');
+                return;
             }
-        };
-
-        xhr.send(JSON.stringify({ ids: selectedIds }));
-    });
-});
+    
+            const xhr = new XMLHttpRequest();
+            const deleteUrl = "{% url 'delete_selected_data' model_name=model_name %}";
+    
+            xhr.open('POST', deleteUrl, true);
+            xhr.setRequestHeader('X-CSRFToken', csrfToken);
+            xhr.setRequestHeader('Content-Type', 'application/json;charset=UTF-8');
+    
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    if (xhr.status === 200) {
+                        alert('Items deleted successfully.');
+                        location.reload(); // Refresh the page to reflect changes
+                    } else {
+                        alert('Error deleting items.');
+                    }
+                }
+            };
+    
+            xhr.send(JSON.stringify({ ids: selectedIds }));
+        });
+    });    
 </script>
 {% endblock %}

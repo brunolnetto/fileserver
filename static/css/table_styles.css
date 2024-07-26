@@ -1,10 +1,4 @@
-.button-container {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px; /* Space between buttons */
-    margin-bottom: 10px; /* Space below the buttons */
-}
-
+/* Base button styling */
 button {
     border: none;
     border-radius: 4px;
@@ -13,16 +7,55 @@ button {
     font-weight: bold;
     padding: 8px 16px;
     transition: background-color 0.3s ease, transform 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Added shadow for better visual separation */
 }
 
-/* Basic table styling */
+/* Button styles */
+.custom-button {
+    background-color: #e74c3c;
+    color: #fff;
+}
+
+.custom-button:hover {
+    background-color: #c0392b;
+    transform: scale(1.05);
+}
+
+.btn-save {
+    background-color: #28a745;
+    color: #fff;
+    border: 2px solid transparent;
+}
+
+.btn-save:hover {
+    background-color: #218838;
+    border-color: #1e7e34;
+    transform: scale(1.05);
+}
+
+.btn-edit {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.btn-edit:hover {
+    background-color: #0056b3;
+    border-color: #00408d;
+}
+
+i.bi {
+    margin-right: 8px;
+}
+
+/* Table styling */
 #data-table {
     width: 100%;
     border-collapse: collapse;
     margin: 20px 0;
     font-size: 16px;
     text-align: left;
-}   
+}
 
 #data-table th, #data-table td {
     padding: 12px;
@@ -47,148 +80,71 @@ button {
     background-color: #e0f7fa;
 }
 
-/* Button styles */
-.custom-button {
-    background-color: #e74c3c; /* Red color for delete */
-    color: #fff;
-    font-size: 16px; /* Ensure consistent font size */
-    padding: 10px 15px; /* Padding for button size consistency */
-}
-
-.custom-button i {
-    font-size: 18px; /* Font size for icon */
-    margin-right: 8px; /* Space between icon and text */
-}
-
-.custom-button:hover {
-    background-color: #c0392b; /* Darker red for hover effect */
-    transform: scale(1.05);
-}
-
-.custom-button:focus {
-    outline: none;
-}
-
-.btn-save {
-    background-color: #28a745; /* Green color for save */
-    color: #fff;
-    border: 2px solid transparent;
-}
-
-.btn-save:hover {
-    background-color: #218838; /* Darker green for hover effect */
-    border-color: #1e7e34;
-    transform: scale(1.05);
-}
-
-.btn-save:focus {
-    outline: none;
-}
-
-.btn-edit {
-    display: flex; /* Use flexbox to center the icon */
-    justify-content: center; /* Center horizontally within button */
-    align-items: center; /* Center vertically within button */
-}
-
-/* Ensure the pencil icon is centered within the button */
-.btn-edit i {
-    margin: 0; /* Remove any default margin */
-}
-
-.btn-edit:hover {
-    background-color: #0056b3; /* Darker blue for hover effect */
-    border-color: #00408d;
-}
-
-.btn-edit:focus {
-    outline: none;
-}
-
-i.bi {
-    margin-right: 8px; /* Space between icon and text */
-}
-
 /* Pagination styling */
 .pagination-container {
-    margin-top: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 1rem;
 }
 
-/* Ensure pagination items match row height */
-.pagination-container {
-    margin-top: 1rem; /* Adjust as needed */
-}
-
-/* Pagination list style */
 .pagination {
     display: flex;
     justify-content: center;
-    align-items: center; /* Center items vertically */
+    align-items: center;
     padding: 0;
     margin: 0;
     list-style: none;
 }
 
-/* Pagination item styling */
 .page-item {
     margin: 0;
 }
 
-/* Pagination link styling */
 .page-link {
     display: inline-block;
-    padding: 0.5rem 1rem; /* Adjust padding to match table row height */
+    padding: 0.5rem 1rem;
     margin: 0;
     border: 1px solid #dee2e6;
     border-radius: 0.25rem;
     color: #007bff;
     text-decoration: none;
     text-align: center;
-    font-size: 1rem; /* Adjust font size if needed */
-    line-height: 1.5; /* Adjust line height if needed */
-    white-space: nowrap; /* Prevent text from wrapping */
-    overflow: hidden; /* Hide overflow text */
-    text-overflow: ellipsis; /* Display ellipsis for overflowed text */
+    font-size: 1rem;
+    line-height: 1.5;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-/* Pagination link hover effect */
 .page-link:hover {
     background-color: #e9ecef;
     color: #0056b3;
 }
 
-/* Disabled page item styling */
+.page-link:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(38, 143, 255, 0.5); /* Added focus style */
+}
+
 .page-item.disabled .page-link {
     color: #6c757d;
     cursor: not-allowed;
 }
 
-/* Active page item styling */
 .page-item.active .page-link {
     background-color: #007bff;
     border-color: #007bff;
     color: #fff;
 }
 
-/* Ensure pagination fits within its container */
-.pagination-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-/* Optional: Add margin to pagination */
-.mt-3 {
-    margin-top: 1rem; /* Adjust as needed */
-}
-
-
 /* Table container for horizontal scrolling */
 .table-container {
     overflow-x: auto;
-    -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+    -webkit-overflow-scrolling: touch;
 }
 
+/* Sort indicator */
 .sortable {
     cursor: pointer;
     position: relative;
@@ -211,7 +167,7 @@ i.bi {
     content: '▼';
 }
 
-/* For Responsive Design */
+/* Responsive design */
 @media (max-width: 768px) {
     button {
         font-size: 14px;
@@ -221,12 +177,37 @@ i.bi {
     .custom-button i,
     .btn-save i,
     .btn-edit i {
-        font-size: 16px; /* Adjust icon size on smaller screens */
+        font-size: 16px;
     }
 }
 
-/* Ensure the pagination container aligns with table row height */
-.pagination-container {
-    margin-top: 1rem; /* Adjust as needed for spacing */
+/* Truncate text and tooltip for filename cells */
+td.filename-cell {
+    position: relative;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 150px;
 }
 
+td.filename-cell::after {
+    content: attr(data-filename);
+    position: absolute;
+    background-color: #333;
+    color: #fff;
+    padding: 5px;
+    border-radius: 3px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    white-space: normal;
+    max-width: 200px;
+    z-index: 1000;
+    top: 100%;
+    left: 0;
+    transform: translateY(5px);
+    font-size: 14px;
+    display: none;
+}
+
+td.filename-cell:hover::after {
+    display: block;
+}
