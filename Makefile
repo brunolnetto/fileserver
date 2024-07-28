@@ -85,3 +85,34 @@ restart: ## Restart the application. Usage: make restart
 
 up: ## Up the application. Usage: make up
 	docker-compose up --build -d
+
+pid: ## Show container pid. Usage: make pid
+	docker inspect --format '{{.State.Pid}}' ${container}
+
+kill: ## Kill a container. Usage: make kill container_name=your_container_name
+	docker inspect --format '{{.State.Pid}}' ${container} | xargs -I {} sudo kill {}
+
+kill-all: ## Kill all containers with names starting with the specified token. Usage: make kill token=your_token
+	@token=${token:-fileserver}; \
+	containers=$$(docker ps -q --filter "name=$$token"); \
+	if [ -z "$$containers" ]; then \
+	    echo "No containers found with name starting with $$token"; \
+	    exit 0; \
+	fi; \
+	echo "Killing containers: $$containers"; \
+	docker inspect --format '{{.State.Pid}}' $$containers | xargs -I {} sudo kill {}
+
+cleanup-network: ## Stop containers and remove the network. Usage: make cleanup-network network_name=your_network_name
+	@network=${network:-fileserver_default}; \
+	containers=$$(docker network inspect $$network -f '{{range .Containers}}{{.Name}} {{end}}'); \
+	if [ -n "$$containers" ]; then \
+	    echo "Stopping containers: $$containers"; \
+	    docker stop $$containers; \
+	    echo "Removing containers: $$containers"; \
+	    docker rm $$containers; \
+	else \
+	    echo "No containers found for network $$network"; \
+	fi; \
+	echo "Removing network: $$network"; \
+	docker network rm $$network
+
