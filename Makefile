@@ -15,6 +15,9 @@ for line in sys.stdin:
 endef
 export PRINT_HELP_PYSCRIPT
 
+# Loads environment variable
+include .env
+
 help:
 	@python -c "$$PRINT_HELP_PYSCRIPT" < $(MAKEFILE_LIST)
 
@@ -75,7 +78,7 @@ ps: ## List all containers. Usage: make ps
 	docker ps -a
 
 build: ## Build the application. Usage: make build
-	docker-compose build
+	docker-compose build --no-cache
 
 down: ## Down the application. Usage: make down
 	docker-compose down
@@ -102,17 +105,8 @@ kill-all: ## Kill all containers with names starting with the specified token. U
 	echo "Killing containers: $$containers"; \
 	docker inspect --format '{{.State.Pid}}' $$containers | xargs -I {} sudo kill {}
 
-cleanup-network: ## Stop containers and remove the network. Usage: make cleanup-network network_name=your_network_name
-	@network=${network:-fileserver_default}; \
-	containers=$$(docker network inspect $$network -f '{{range .Containers}}{{.Name}} {{end}}'); \
-	if [ -n "$$containers" ]; then \
-	    echo "Stopping containers: $$containers"; \
-	    docker stop $$containers; \
-	    echo "Removing containers: $$containers"; \
-	    docker rm $$containers; \
-	else \
-	    echo "No containers found for network $$network"; \
-	fi; \
-	echo "Removing network: $$network"; \
-	docker network rm $$network
+psql: ## Access the database. Usage: make psql
+	docker exec -it fileserver-db-1 psql -h localhost -U ${DATABASE_USER} ${DATABASE_NAME}
 
+bash: ## Access the container. Usage: make bash container=your_container_name
+	docker exec -it ${container} bash
