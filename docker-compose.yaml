@@ -4,7 +4,13 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports: 
-      - 5432:5432
+      - ${DATABASE_PORT}:5432
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", $DATABASE_USER]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 5s
     environment:
       POSTGRES_HOST: ${DATABASE_HOST}
       POSTGRES_PORT: ${DATABASE_PORT}
@@ -13,26 +19,34 @@ services:
       POSTGRES_DB: ${DATABASE_NAME}
 
   redis:
-    image: redis:7
+    restart: unless-stopped
+    image: redis:7.0.5-alpine 
+    ports: 
+      - "6379:6379"
 
   web:
+    restart: unless-stopped
     build:
       context: .
-      dockerfile: build/django/Dockerfile
+      dockerfile: build/Dockerfile
     volumes:
       - .:/app
+      - static_volume:/app/backend/django_static
     ports:
       - "8000:8000"
+    expose:
+        - 8000
     env_file:
       - .env
     depends_on:
       - db
       - redis
 
-  celery:
+  celery-worker:
     build:
       context: .
-      dockerfile: build/celery/Dockerfile
+      dockerfile: build/Dockerfile
+    entrypoint: /app/build/celery/entrypoint-worker.sh
     volumes:
       - .:/app
     env_file:
@@ -44,10 +58,10 @@ services:
   celery-beat:
     build:
       context: .
-      dockerfile: build/celery/Dockerfile
-    entrypoint: ["sh", "/app/build/celery/entrypoint-beat.sh"]
+      dockerfile: build/Dockerfile
+    entrypoint: /app/build/celery/entrypoint-beat.sh
     volumes:
-      - .:/app
+      - .:/apps
     env_file:
       - .env
     depends_on:
@@ -56,14 +70,15 @@ services:
 
   flower:
     image: mher/flower:latest
-    command: ['flower', '--broker=redis://redis:6379', '--port=5555']
+    command: ['celery', 'flower']
     ports:
       - "5555:5555"
     env_file:
       - .env
     depends_on:
       - redis
-      - celery
+      - celery-worker
 
 volumes:
-  postgres_data:
+  static_volume: {}
+  postgres_data: {}
