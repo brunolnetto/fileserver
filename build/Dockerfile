@@ -14,5 +14,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the application code into the container
 COPY . .
 
-# Define the command to run Celery
-CMD ["sh", "/app/build/celery/entrypoint.sh"]
+# Celery
+RUN chmod +x /app/build/celery/entrypoint-worker.sh
+RUN chmod +x /app/build/celery/entrypoint-beat.sh
+
+# Django
+RUN chmod +x /app/build/django/entrypoint.sh

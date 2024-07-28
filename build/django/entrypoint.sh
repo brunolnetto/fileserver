@@ -1,17 +1,28 @@
 #!/bin/sh
 
+until cd /app/backend
+do
+    echo "Waiting for server volume..."
+done
+
+# Generate database migrations
+until python manage.py makemigrations
+do
+    echo "Generating database migrations..."
+    sleep 2
+done
+
+# Apply database migrations
+until python manage.py migrate
+do
+    echo "Applying database migrations..."
+    sleep 2
+done
+
 # Collect static files
 echo "Generating static files..."
 python manage.py collectstatic --noinput
 
-# Generate database migrations
-echo "Generating database migrations..."
-python manage.py makemigrations
-
-# Apply database migrations
-echo "Applying database migrations..."
-python manage.py migrate
-
 # Start the development server
 echo "Starting server..."
-exec python manage.py runserver 0.0.0.0:8000
+gunicorn backend.wsgi --bind 0.0.0.0:8000 --workers 4 --threads 4
