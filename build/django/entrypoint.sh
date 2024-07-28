@@ -1,28 +1,31 @@
 #!/bin/sh
 
-until cd /app/backend
-do
-    echo "Waiting for server volume..."
-done
+# Check if the /app/backend directory exists
+if [ ! -d /app/backend ]; then
+  echo "/app/backend directory not found. Exiting."
+  exit 1
+fi
 
-# Generate database migrations
-until python manage.py makemigrations
-do
-    echo "Generating database migrations..."
-    sleep 2
+cd /app/backend
+
+# Wait for the database to be ready and then generate database migrations
+echo "Waiting for database to be ready..."
+until python manage.py makemigrations; do
+  echo "Failed to generate migrations. Retrying..."
+  sleep 2
 done
 
 # Apply database migrations
-until python manage.py migrate
-do
-    echo "Applying database migrations..."
-    sleep 2
+echo "Applying database migrations..."
+until python manage.py migrate; do
+  echo "Failed to apply migrations. Retrying..."
+  sleep 2
 done
 
 # Collect static files
-echo "Generating static files..."
+echo "Collecting static files..."
 python manage.py collectstatic --noinput
 
-# Start the development server
+# Start the server
 echo "Starting server..."
-gunicorn backend.wsgi --bind 0.0.0.0:8000 --workers 4 --threads 4
+exec gunicorn backend.wsgi:application --bind 0.0.0.0:8000 --workers 4 --threads 4

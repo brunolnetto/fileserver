@@ -4,9 +4,9 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports: 
-      - ${DATABASE_PORT}:5432
+      - "${DATABASE_PORT}:5432"
     healthcheck:
-      test: ["CMD", "pg_isready", "-U", $DATABASE_USER]
+      test: ["CMD", "pg_isready", "-U", "${DATABASE_USER}"]
       interval: 10s
       retries: 5
       start_period: 30s
@@ -35,7 +35,7 @@ services:
     ports:
       - "8000:8000"
     expose:
-        - 8000
+      - 8000
     env_file:
       - .env
     depends_on:
@@ -61,7 +61,7 @@ services:
       dockerfile: build/Dockerfile
     entrypoint: /app/build/celery/entrypoint-beat.sh
     volumes:
-      - .:/apps
+      - .:/app
     env_file:
       - .env
     depends_on:
