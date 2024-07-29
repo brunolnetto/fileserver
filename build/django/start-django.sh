@@ -1,12 +1,12 @@
 #!/bin/sh
 
 # Check if the /app/backend directory exists
-if [ ! -d /app/backend ]; then
-  echo "/app/backend directory not found. Exiting."
+if [ ! -d /app ]; then
+  echo "/app directory not found. Exiting."
   exit 1
 fi
 
-cd /app/backend
+cd /app
 
 # Wait for the database to be ready and then generate database migrations
 echo "Waiting for database to be ready..."
@@ -28,4 +28,4 @@ python manage.py collectstatic --noinput
 
 # Start the server
 echo "Starting server..."
-exec gunicorn backend.wsgi:application --bind 0.0.0.0:8000 --workers 4 --threads 4
+exec gunicorn fileserver.wsgi:application --bind 0.0.0.0:8000 --workers 4 --threads 4

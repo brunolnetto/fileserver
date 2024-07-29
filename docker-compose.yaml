@@ -1,16 +1,13 @@
 services:
   db:
     image: postgres:14
+    build:
+      context: .
+      dockerfile: ./build/Dockerfile
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports: 
       - "${DATABASE_PORT}:5432"
-    healthcheck:
-      test: ["CMD", "pg_isready", "-U", "${DATABASE_USER}"]
-      interval: 10s
-      retries: 5
-      start_period: 30s
-      timeout: 5s
     environment:
       POSTGRES_HOST: ${DATABASE_HOST}
       POSTGRES_PORT: ${DATABASE_PORT}
@@ -28,14 +25,14 @@ services:
     restart: unless-stopped
     build:
       context: .
-      dockerfile: build/Dockerfile
+      dockerfile: ./build/Dockerfile
+    command:
+      - /start-django.sh
     volumes:
       - .:/app
       - static_volume:/app/backend/django_static
     ports:
-      - "8000:8000"
-    expose:
-      - 8000
+      - "${DJANGO_PORT}:8000"
     env_file:
       - .env
     depends_on:
@@ -45,8 +42,9 @@ services:
   celery-worker:
     build:
       context: .
-      dockerfile: build/Dockerfile
-    entrypoint: /app/build/celery/entrypoint-worker.sh
+      dockerfile: ./build/Dockerfile
+    command:
+      - /start-celery-worker.sh
     volumes:
       - .:/app
     env_file:
@@ -58,8 +56,9 @@ services:
   celery-beat:
     build:
       context: .
-      dockerfile: build/Dockerfile
-    entrypoint: /app/build/celery/entrypoint-beat.sh
+      dockerfile: ./build/Dockerfile
+    command:
+      - /start-celery-beat.sh
     volumes:
       - .:/app
     env_file:
@@ -68,16 +67,7 @@ services:
       - db
       - redis
 
-  flower:
-    image: mher/flower:latest
-    command: ['celery', 'flower']
-    ports:
-      - "5555:5555"
-    env_file:
-      - .env
-    depends_on:
-      - redis
-      - celery-worker
+  
 
 volumes:
   static_volume: {}

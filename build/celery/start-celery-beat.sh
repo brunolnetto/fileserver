@@ -2,6 +2,8 @@
 
 set -e
 
+cd /app
+
 echo "Generating migrations for django-celery-beat..."
 python manage.py makemigrations django_celery_beat
 
