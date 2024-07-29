@@ -60,9 +60,12 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 ALLOWED_HOSTS = ['*']
 
+
 # Add the ngrok URL to CSRF_TRUSTED_ORIGINS
+DOMAIN_NAME=environ.get('DOMAIN_NAME', 'http://localhost:8000')
 CSRF_TRUSTED_ORIGINS = [
-    'https://1c3e-191-7-29-136.ngrok-free.app',
+    'http://localhost:8000',
+    DOMAIN_NAME,
 ]
 
 # Session expires after 5 minutes of inactivity
@@ -119,11 +122,16 @@ FILE_UPLOAD_HANDLERS = [
     'django.core.files.uploadhandler.TemporaryFileUploadHandler',
 ]
 
+# Custom user model
 LOGIN_URL = '/login'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
 
+# Custom user model
 DOMAIN = environ.get('DOMAIN', 'http://localhost:8000')
+
+# Custom CSRF failure view
+CSRF_FAILURE_VIEW = 'web.views.custom_csrf_failure_view'
 
 # Email settings (example using console backend for development)
 # NOTE: Check url https://myaccount.google.com/apppasswords

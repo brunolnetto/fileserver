@@ -21,10 +21,11 @@
                 onfocus="clearPlaceholder(this)" 
                 onblur="restorePlaceholder(this)"
             >
-        </div>
-        <div id="username-status" class="input-group-append">
-            <!-- Space reserved for the icon -->
-            <span id="username-icon" class="icon-placeholder"></span>
+            <div class="input-group-append">
+                <span id="username-icon" class="input-group-text">
+                    <i id="username-icon-element" class="bi"></i>
+                </span>
+            </div>
         </div>
         <div id="username-feedback" class="feedback text-danger"></div>
         <div id="username-loading" class="loading-text"></div>
@@ -33,17 +34,25 @@
     <!-- Email Field -->
     <div class="form-group">
         <label for="email">E-mail:</label>
-        <input 
-            type="email" 
-            id="email" 
-            name="email" 
-            class="form-control form-control-sm" 
-            placeholder="Insira e-mail" 
-            required
-            onfocus="clearPlaceholder(this)" 
-            onblur="restorePlaceholder(this)"
-        >
-        <div id="email-error" class="text-danger"></div>
+        <div class="input-group">
+            <input 
+                type="email" 
+                id="email" 
+                name="email" 
+                class="form-control form-control-sm" 
+                placeholder="Insira e-mail" 
+                required
+                onfocus="clearPlaceholder(this)" 
+                onblur="restorePlaceholder(this)"
+            >
+            <div class="input-group-append">
+                <span id="email-icon" class="input-group-text">
+                    <i id="email-icon-element" class="bi"></i>
+                </span>
+            </div>
+        </div>
+        <div id="email-feedback" class="feedback text-danger"></div>
+        <div id="email-loading" class="loading-text"></div>
     </div>
 
     <!-- Password Field -->
@@ -87,9 +96,16 @@
     </div>
 
     <button type="submit" class="btn btn-primary">Cadastrar</button>
+
+    <!-- Validation messages -->
+    <div id="validation-messages" style="margin-top: 10px;"></div>
 </form>
 
 <script>
+    let usernameDelayTimer;
+    let emailDelayTimer;
+    let validationMessages = document.getElementById('validation-messages');
+
     // Function to clear placeholder on focus
     function clearPlaceholder(element) {
         element.setAttribute('data-placeholder', element.placeholder); // Save current placeholder
@@ -104,109 +120,159 @@
     }
 
     // Toggle password visibility
-    document.getElementById('togglePassword1').addEventListener('click', function() {
-        var passwordField = document.getElementById('password1');
-        var type = passwordField.getAttribute('type') === 'password' ? 'text' : 'password';
-        passwordField.setAttribute('type', type);
+    // Toggle password visibility
+    function togglePasswordVisibility(toggleButtonId, passwordFieldId) {
+        document.getElementById(toggleButtonId).addEventListener('click', function() {
+            var passwordField = document.getElementById(passwordFieldId);
+            var type = passwordField.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordField.setAttribute('type', type);
 
-        var icon = this.querySelector('i');
-        icon.classList.toggle('bi-eye-slash', type === 'password');
-        icon.classList.toggle('bi-eye', type === 'text');
-    });
+            var icon = this.querySelector('i');
+            icon.classList.toggle('bi-eye-slash', type === 'password');
+            icon.classList.toggle('bi-eye', type === 'text');
+        });
+    }
 
-    document.getElementById('togglePassword2').addEventListener('click', function() {
-        var passwordField = document.getElementById('password2');
-        var type = passwordField.getAttribute('type') === 'password' ? 'text' : 'password';
-        passwordField.setAttribute('type', type);
-        
-        var icon = this.querySelector('i');
-        icon.classList.toggle('bi-eye-slash', type === 'password');
-        icon.classList.toggle('bi-eye', type === 'text');
-    });
+    togglePasswordVisibility('togglePassword1', 'password1');
+    togglePasswordVisibility('togglePassword2', 'password2');
 
-    // Check username availability on each input change
-    document.getElementById('username').addEventListener('input', function() {
-        var username = this.value;
-        var usernameFeedback = document.getElementById('username-feedback');
-        var usernameLoading = document.getElementById('username-loading');
-    
-        // Reset feedback text
-        usernameFeedback.textContent = '';
-    
-        if (username.length > 0) {
-            // Show loading message immediately
-            usernameLoading.textContent = 'Checando disponibilidade...';
-    
-            // Function to handle the delayed display of the result
-            function displayAvailability(resultText, isAvailable) {
-                usernameLoading.textContent = '';
-                usernameFeedback.textContent = resultText;
-                if (isAvailable) {
-                    usernameFeedback.classList.add('text-success');
-                    usernameFeedback.classList.remove('text-danger');
-                } else {
-                    usernameFeedback.classList.add('text-danger');
-                    usernameFeedback.classList.remove('text-success');
-                }
-            }
-    
-            // Start the delay timer
-            var loadingTimeout = setTimeout(() => {
-                // Perform the fetch request after delay
-                fetch('/check-username/', {
+    // Validate username
+    function validateUsername(username) {
+        return /^[a-zA-Z0-9_-]{5,20}$/.test(username);
+    }
+
+    // Validate email
+    function validateEmail(email) {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    }
+
+    function addValidationMessage(message) {
+        const listItem = document.createElement('li');
+        listItem.textContent = message;
+        validationMessages.appendChild(listItem);
+    }
+
+    // Check availability of username or email
+    function checkAvailability(type, value, feedbackElement, loadingElement, iconElement) {
+        clearTimeout(type === 'username' ? usernameDelayTimer : emailDelayTimer);
+
+        if (value) {
+            const delayTimer = setTimeout(() => {
+                fetch(`/check-${type}/`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'X-CSRFToken': document.querySelector('input[name="csrfmiddlewaretoken"]').value
                     },
-                    body: JSON.stringify({ username: username })
+                    body: JSON.stringify({ [type]: value })
                 })
-                .then(response => response.json())
+                .then(response => {
+                    console.log(`Response Status for ${type}:`, response.status); // Log the response status
+                    return response.json();
+                })
                 .then(data => {
-                    displayAvailability(data.exists ? 'Usuário já existe.' : 'Usuário está disponível!', !data.exists);
+                    console.log(`Response Data for ${type}:`, data); // Log the response data
+                    const isAvailable = !data.exists;
+                    displayAvailability(type, isAvailable, feedbackElement, loadingElement, iconElement);
                 })
-                .catch(() => {
-                    // Handle network errors
-                    displayAvailability('Erro ao checar disponibilidade.', false);
+                .catch((error) => {
+                    console.error(`Fetch Error for ${type}:`, error); // Log fetch errors
+                    displayAvailability(type, false, feedbackElement, loadingElement, iconElement, 'Erro ao checar disponibilidade.');
                 });
             }, 250);
+
+            if (type === 'username') {
+                usernameDelayTimer = delayTimer;
+            } else {
+                emailDelayTimer = delayTimer;
+            }
         } else {
-            // Clear feedback if the username field is empty
-            usernameLoading.textContent = '';
-            usernameFeedback.textContent = '';
+            loadingElement.textContent = '';
+            feedbackElement.textContent = '';
+            iconElement.className = 'bi'; // Reset icon
         }
-    });    
+    }
+
+    // Display availability status
+    function displayAvailability(type, isAvailable, feedbackElement, iconElement, errorMessage) {
+        feedbackElement.textContent = '';
+        if (errorMessage) {
+            addValidationMessage(errorMessage)
+            iconElement.className = 'bi bi-x-circle'; // Error icon
+        } else if (isAvailable) {
+            iconElement.className = 'bi bi-check-circle'; // Check icon
+        } else {
+            addValidationMessage(`${type === 'username' ? 'Usuário' : 'E-mail'} já existe.`);
+            iconElement.className = 'bi bi-x-circle'; // Error icon
+        }
+    }
+
+    // Initialize event listeners
+    document.addEventListener('DOMContentLoaded', () => {
+        const usernameInput = document.getElementById('username');
+        const usernameFeedback = document.getElementById('username-feedback');
+        const usernameLoading = document.getElementById('username-loading');
+        const usernameIcon = document.getElementById('username-icon-element');
+
+        const emailInput = document.getElementById('email');
+        const emailFeedback = document.getElementById('email-feedback');
+        const emailLoading = document.getElementById('email-loading');
+        const emailIcon = document.getElementById('email-icon-element');
+        const emailError = document.getElementById('email-error');
+
+        usernameInput.addEventListener('input', function() {
+            const username = this.value.trim();
+            validationMessages.innerHTML = ''; // Clear previous messages
+            if (validateUsername(username)) {
+                checkAvailability('username', username, usernameIcon);
+            } else {
+                addValidationMessage('Nome de usuário inválido. Deve ter 5-20 caracteres e pode conter letras, números, underscores e hífens.');
+                usernameIcon.className = 'bi bi-x-circle'; // Error icon
+            }
+        });
     
+        emailInput.addEventListener('input', function() {
+            const email = this.value.trim();
+            validationMessages.innerHTML = ''; // Clear previous messages
+            if (validateEmail(email)) {
+                checkAvailability('email', email, emailIcon);
+            } else {
+                addValidationMessage('E-mail inválido.');
+                emailIcon.className = 'bi bi-x-circle'; // Error icon
+            }
+        });
 
-    // Client-side validation on form submit
-    document.getElementById('signup-form').addEventListener('submit', function(event) {
-        var username = document.getElementById('username').value;
-        var email = document.getElementById('email').value;
-        var password1 = document.getElementById('password1').value;
-        var password2 = document.getElementById('password2').value;
-        var usernameFeedback = document.getElementById('username-feedback');
-        var emailError = document.getElementById('email-error');
-        var valid = true;
+        document.getElementById('signup-form').addEventListener('submit', function(event) {
+            var username = document.getElementById('username').value;
+            var email = document.getElementById('email').value;
+            var password1 = document.getElementById('password1').value;
+            var password2 = document.getElementById('password2').value;
+            var valid = true;
 
-        // Check if passwords match
-        if (password1 !== password2) {
-            alert('Passwords do not match.');
-            valid = false;
-        }
+            // Check if passwords match
+            if (password1 !== password2) {
+                addValidationMessage('Senhas não coincidem.');
+                valid = false;
+            }
 
-        // Check username and email errors
-        if (usernameFeedback.textContent.includes('já existe')) {
-            valid = false;
-        }
+            // Check username and email errors
+            const emailError = document.getElementById('email-feedback').textContent;
 
-        if (emailError.textContent.includes('já existe')) {
-            valid = false;
-        }
+            if (usernameFeedback.includes('já existe') || usernameFeedback.includes('inválido')) {
+                addValidationMessage(usernameFeedback);
+                valid = false;
+            }
 
-        // Prevent form submission if there are validation errors
-        if (!valid) {
-            event.preventDefault();
-        }
+            if (emailError.includes('inválido') || emailError.includes('já existe')) {
+                addValidationMessage(emailError);
+                valid = false;
+            }
+
+            // Prevent form submission if there are validation errors
+            if (!valid) {
+                event.preventDefault();
+            }
+        });
     });
 </script>
 

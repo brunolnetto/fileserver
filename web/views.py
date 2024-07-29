@@ -3,12 +3,19 @@ from django.shortcuts import render, redirect
 from django.shortcuts import get_object_or_404
 
 from django.core.paginator import Paginator
+
+from django.core.validators import validate_email
 from django.core.mail import BadHeaderError
 
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_protect, csrf_exempt
 
-from django.http import JsonResponse, HttpResponseBadRequest, HttpResponse
+from django.http import (
+    JsonResponse, 
+    HttpResponseBadRequest, 
+    HttpResponse, 
+    HttpResponseForbidden,
+)
 
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserChangeForm, UserCreationForm, AuthenticationForm
@@ -16,7 +23,6 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth import login, authenticate
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
-from django.db.models import IntegerField,  DateField, DateTimeField
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import default_token_generator
@@ -31,11 +37,13 @@ from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.template.loader import render_to_string
 
 from django.core.mail import send_mail
-from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
+
+from django.http import HttpResponseForbidden
 
 from django.conf import settings
 from django.apps import apps
-
+from django.db.models import IntegerField,  DateField, DateTimeField
 from shutil import rmtree
 import logging
 import json
@@ -45,8 +53,7 @@ from .tasks import send_confirmation_email_task
 from .forms import CustomPasswordResetForm, UploadForm, UserProfileForm
 from .utils import custom_error_response
 from .models import Upload, EmailQueue
-
-DEFAULT_PAGE_SIZE = 5
+from .constants import DEFAULT_PAGE_SIZE
 
 # Get the logger
 logger = logging.getLogger('django')
@@ -59,6 +66,11 @@ def get_field_type(field):
         return 'date'
     else:
         return 'string'
+
+def custom_csrf_failure_view(request, reason=""):
+    return render(request, 'status_codes/403.html', {
+        'reason': reason,
+    }, status=403)
 
 def table_view(request, model_name):
     # Get the model class dynamically
@@ -160,7 +172,6 @@ def delete_selected_files_view(request, model_name):
         return JsonResponse({'error': 'Invalid JSON'}, status=400)
 
     ids = data.get('ids', [])
-    logger.debug(f"Received IDs to delete: {ids}")
 
     if not ids:
         return JsonResponse({'status': 'success', 'message': 'No IDs provided'})
@@ -247,14 +258,52 @@ def login_required_view(request):
 
 @csrf_exempt
 @require_POST
-def check_username_view(request):
+def check_username(request):
     try:
+        data = json.loads(request.body)
+        value = data.get(type)
+
         data = json.loads(request.body)
         username = data.get('username', '')
         activated_user_exists = User.objects.filter(username=username).exists()
         pending_user_exists = PendingRegistration.objects.filter(pere_username=username).exists()
 
-        exists = activated_user_exists and pending_user_exists
+        exists = activated_user_exists or pending_user_exists
+
+        return JsonResponse({'exists': exists})
+
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+@csrf_exempt
+@require_POST
+def check_email(request):
+    data = json.loads(request.body)
+    email = data.get('email', '')
+    
+    # Validate email format
+    try:
+        validate_email(email)
+    except ValidationError:
+        return JsonResponse({'error': 'E-mail inválido.'}, status=400)
+    
+    activated_user_exists = User.objects.filter(email=email).exists()
+    pending_user_exists = PendingRegistration.objects.filter(pere_email=email).exists()
+
+    email_exists = activated_user_exists or pending_user_exists
+    
+    return JsonResponse({'exists': email_exists})
+
+@csrf_exempt
+@require_POST
+def check_availability(request, type):
+    try:
+        data = json.loads(request.body)
+        username = data.get('username', '')
+        activated_user_exists = User.objects.filter(username=username).exists()
+        pending_user_exists = PendingRegistration.objects.filter(pere_username=username).exists()
+        
+        exists = activated_user_exists or pending_user_exists
 
         return JsonResponse({'exists': exists})
     except Exception as e:

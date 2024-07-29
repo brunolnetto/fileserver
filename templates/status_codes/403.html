@@ -1,0 +1,11 @@
+<!-- templates/403.html -->
+
+{% extends 'web/base.html' %}
+
+{% block title %}Página inicial{% endblock %}
+
+{% block content %}
+    <h1>CSRF Error</h1>
+    <p>Sorry, your request could not be processed due to a CSRF verification failure.</p>
+    <p>Reason: {{ reason }}</p>
+{% endblock %}

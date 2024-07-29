@@ -7,7 +7,7 @@ from .views import (
     home_view, table_view, update_data, delete_selected_files_view, confirm_email,
     upload_files_view, update_uploaded_files_view, upload_success_view, upload_status_view, 
     delete_selected_files_view, signup_view, login_view, logout_view, settings_view, 
-    check_username_view, check_email_view, login_required_view, update_first_login_flag,
+    check_availability, check_email, check_username, login_required_view, update_first_login_flag,
 )
 from .views import send_test_email
 from .views import CustomPasswordResetView
@@ -34,8 +34,8 @@ urlpatterns = [
     path('password_reset/done/', auth_views.PasswordResetDoneView.as_view(), name='password_reset_done'),
     path('reset/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
     path('reset/done/', auth_views.PasswordResetCompleteView.as_view(), name='password_reset_complete'),
-    path('check-username/', check_username_view, name='check-username'),
-    path('check-email/', check_email_view, name='check_email'),
+    path('check-username/', check_username, name='check-username'),
+    path('check-email/', check_email, name='check-email'),
     path('send-test-email/', send_test_email, name='send_test_email'),
     # File upload routes
     path('upload-files/', upload_files_view, name='upload_files'),
