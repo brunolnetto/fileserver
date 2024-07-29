@@ -67,8 +67,17 @@ services:
       - db
       - redis
 
+  celery-flower:
+    image: mher/flower
+    ports:
+      - "5555:5555"
+    command:
+      - /start-celery-flower.sh
+    depends_on:
+      - celery-worker
+      - redis
   
 
 volumes:
-  static_volume: {}
-  postgres_data: {}
+  static_volume:
+  postgres_data:

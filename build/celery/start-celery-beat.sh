@@ -11,4 +11,4 @@ echo "Applying django-celery-beat migrations..."
 python manage.py migrate django_celery_beat
 
 echo "Starting Celery Beat..."
-celery -A fileserver beat --loglevel=info
+celery -A A fileserver beat --loglevel=info
