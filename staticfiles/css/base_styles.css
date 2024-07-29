@@ -172,10 +172,6 @@ body.dark-mode .sidebar a:hover {
     list-style: none;
 }
 
-.password-container {
-    position: relative;
-}
-
 .page-item {
     margin: 0 5px;
 }
@@ -450,26 +446,6 @@ body.dark-mode .sidebar {
     background-color: #0056b3;
 }
 
-.feedback-message {
-    color: red;
-    font-size: 0.875em;
-}
-
-.bi {
-    position: absolute;
-    right: 10px;
-    top: 50%;
-    transform: translateY(-50%);
-}
-
-.bi-check-circle {
-    color: green;
-}
-
-.bi-x-circle {
-    color: red;
-}
-
 .editable-mode {
     background-color: #f0f0f0;
     border: 1px solid #ccc;
@@ -589,42 +565,24 @@ body.dark-mode .sidebar {
     position: relative;
     margin-bottom: 15px;
 }
-
+    
 .toggle-password {
     position: absolute;
-    right: 10px; /* Adjust as needed */
+    right: 10px; /* Adjust this value as needed */
     top: 50%;
     transform: translateY(-50%);
     border: none;
     background: transparent;
     cursor: pointer;
     padding: 0;
-    z-index: 2; /* Ensures the button is above other elements */
-    outline: none; /* Remove outline on focus */
 }
 
 .toggle-password i {
-    font-size: 1.5em; /* Increased icon size */
-    color: #007bff; /* Primary color for visibility */
-    transition: color 0.3s ease; /* Smooth transition for color change */
-}
-
-.toggle-password:hover i {
-    color: #0056b3; /* Lighter shade for hover effect */
-}
-
-.toggle-password:focus, .toggle-password:active {
-    outline: none; /* Remove default focus outline */
-    box-shadow: none; /* Remove focus box-shadow if any */
-}
-
-.feedback {
-    font-size: 0.875em;
-    margin-top: 0.25em; /* Space between input field and feedback */
+    font-size: 1.25em; /* Adjust size as needed */
 }
 
 .form-control {
-    padding-right: 3em; /* Adjust padding to make room for the icon */
+    padding: 10px;
 }
 
 /* General button styling */
@@ -763,63 +721,6 @@ td, th {
 
 .upload-btn:hover {
     background-color: #0056b3; /* Darker blue on hover */
-}
-
-.feedback.text-success {
-    color: #28a745; /* Green for available */
-}
-
-.feedback.text-danger {
-    color: #dc3545; /* Red for not available */
-}
-
-.loading-text {
-    color: #6c757d; /* Gray for loading state */
-    font-size: 0.875em; /* Smaller text for loading */
-}
-
-.input-group {
-    display: flex;
-    align-items: center;
-    position: relative;
-    margin-bottom: 0; /* Remove any bottom margin if needed */
-}
-
-.input-group-append {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.input-group-text {
-    width: 2.5em; /* Fixed width for consistency */
-    height: 100%;
-    display: flex;
-    background: transparent;
-    border: none;
-    align-items: center;
-    justify-content: center;
-    min-width: 2.5em; /* Ensures the container maintains space even when empty */
-}
-
-.icon-placeholder {
-    display: inline-block;
-    width: 2em; /* Adjust width to provide space for the icon */
-    height: 1.5em; /* Adjust height as needed */
-}
-
-
-.input-group-text.bi {
-    font-size: 1.25em;
-}
-
-.feedback, .loading-text {
-    position: absolute;
-    bottom: -1em; /* Adjust to be close to the input field */
-    left: 0;
-    width: 100%;
-    font-size: 0.875em; /* Smaller text for feedback */
-    margin: 0; /* Remove any default margins */
 }
 
 .reset-btn {

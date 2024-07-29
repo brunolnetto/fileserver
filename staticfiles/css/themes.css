@@ -1,0 +1,43 @@
+/* Dark mode styles */
+body.dark-mode {
+    background-color: #121212; /* Dark background */
+    color: #e0e0e0; /* Light text color */
+}
+
+body.dark-mode #data-table th {
+    background-color: #1f1f1f; /* Darker header */
+    color: #e0e0e0; /* Light text color */
+}
+
+body.dark-mode #data-table tbody tr {
+    background-color: #1e1e1e; /* Darker row background */
+}
+
+body.dark-mode #data-table tbody tr:hover {
+    background-color: #333333; /* Darker hover effect */
+}
+
+body.dark-mode .editable-mode {
+    background-color: #263238; /* Darker editable cell background */
+}
+
+body.dark-mode .custom-button {
+    background-color: #e53935; /* Darker red for delete */
+}
+
+body.dark-mode .btn-save {
+    background-color: #388e3c; /* Darker green for save */
+}
+
+body.dark-mode .btn-edit {
+    background-color: #0288d1; /* Darker blue for edit */
+}
+
+body.dark-mode .page-link {
+    background-color: #1e1e1e; /* Darker background for pagination links */
+    color: #90caf9; /* Light text color */
+}
+
+body.dark-mode .page-link:hover {
+    background-color: #333333; /* Darker hover effect for pagination links */
+}
