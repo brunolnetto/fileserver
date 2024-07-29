@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 import os
 from os import environ
 from dotenv import load_dotenv
+from django.utils.translation import gettext_lazy as _
 from pathlib import Path
 
 load_dotenv()
@@ -43,7 +44,31 @@ CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 MEDIA_URL = environ.get('FILE_UPLOAD_PATH', '/media/')
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
-ALLOWED_HOSTS = []
+# Static files (CSS, JavaScript, Images)
+# https://docs.djangoproject.com/en/5.0/howto/static-files/
+
+# Define the static files directory
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+STATIC_URL = '/staticfiles/'
+STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
+
+# Static files (CSS, JavaScript, Images)
+# https://docs.djangoproject.com/en/5.0/howto/static-files/
+
+# Define the static files directory
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+ALLOWED_HOSTS = ['*']
+
+# Add the ngrok URL to CSRF_TRUSTED_ORIGINS
+CSRF_TRUSTED_ORIGINS = [
+    'https://1c3e-191-7-29-136.ngrok-free.app',
+]
+
+# Session expires after 5 minutes of inactivity
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+SESSION_COOKIE_AGE = 10 * 60
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
 # Add the Redis channel layer for Django Channels if needed
 REDIS_HOST=environ.get('REDIS_HOST', 'localhost')
@@ -59,9 +84,7 @@ CHANNEL_LAYERS = {
     },
 }
 
-
 # Application definition
-
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -71,8 +94,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django_celery_beat',
     'rest_framework',
-    'drf_yasg',    
-    'web',
+    'drf_yasg',
+    'web.apps.WebConfig',
     'api',
 ]
 
@@ -86,10 +109,32 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+    # other backends
+]
+
 # File upload handlers
 FILE_UPLOAD_HANDLERS = [
     'django.core.files.uploadhandler.TemporaryFileUploadHandler',
 ]
+
+LOGIN_URL = '/login'
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/'
+
+DOMAIN = environ.get('DOMAIN', 'http://localhost:8000')
+
+# Email settings (example using console backend for development)
+# NOTE: Check url https://myaccount.google.com/apppasswords
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'  # SMTP server address
+EMAIL_PORT = 587
+EMAIL_HOST_USER = environ.get('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = environ.get('EMAIL_HOST_PASSWORD')
+DEFAULT_FROM_EMAIL = environ.get('DEFAULT_FROM_EMAIL')
+EMAIL_USE_SSL = False
+EMAIL_USE_TLS = True
 
 ROOT_URLCONF = 'fileserver.urls'
 
@@ -108,6 +153,42 @@ TEMPLATES = [
         },
     },
 ]
+
+# Logging configuration
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'file': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': 'debug.log',
+            'formatter': 'verbose',
+        },
+        'console': {
+            'level': 'ERROR',
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['file', 'console'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+    },
+}
 
 WSGI_APPLICATION = 'fileserver.wsgi.application'
 
@@ -156,13 +237,6 @@ USE_I18N = True
 
 USE_TZ = True
 
-
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/5.0/howto/static-files/
-
-# Define the static files directory
-STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field

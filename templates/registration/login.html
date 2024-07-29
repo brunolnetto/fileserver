@@ -1,0 +1,167 @@
+{% extends 'web/base.html' %}
+
+{% block title %}Login{% endblock %}
+
+{% block content %}
+<h1>Login</h1>
+<form method="post" action="{% url 'login' %}" id="login-form" class="form-container">
+    {% csrf_token %}
+    
+    <!-- Display Error Message -->
+    {% if form.non_field_errors %}
+        <div class="alert alert-danger">
+            {% for error in form.non_field_errors %}
+                <p>{{ error }}</p>
+            {% endfor %}
+        </div>
+    {% endif %}
+    
+    <!-- Username Field -->
+    <div class="form-group">
+        <label for="username">Usuário:</label>
+        <input 
+            type="text" 
+            id="username" 
+            name="username" 
+            class="form-control form-control-sm" 
+            placeholder="Insira seu usuário" 
+            required
+            onfocus="clearPlaceholder(this)" 
+            onblur="restorePlaceholder(this)"
+        >
+    </div>
+    
+    <!-- Password Field -->
+    <div class="form-group">
+        <label for="password">Senha:</label>
+        <div class="password-container">
+            <input 
+                type="password" 
+                id="password" 
+                name="password" 
+                class="form-control form-control-sm" 
+                placeholder="Insira sua senha" 
+                required
+                onfocus="clearPlaceholder(this)" 
+                onblur="restorePlaceholder(this)"
+            >
+            <button type="button" id="togglePassword1" class="toggle-password">
+                <i class="bi bi-eye-slash"></i>
+            </button>
+        </div>
+    </div>
+    
+    <div class="d-flex justify-content-between align-items-center">
+        <!-- Submit Button -->
+        <button type="submit" class="btn btn-primary">Entrar</button>
+        
+        <!-- Forgot Password Link -->
+        <a href="{% url 'password_reset' %}" class="forgot-password-link">Esqueceu sua senha?</a>
+    </div>
+</form>
+
+<script>
+    // Function to clear placeholder on focus
+    function clearPlaceholder(element) {
+        element.setAttribute('data-placeholder', element.placeholder); // Save current placeholder
+        element.placeholder = ''; // Clear placeholder
+    }
+
+    // Function to restore placeholder on blur
+    function restorePlaceholder(element) {
+        if (!element.value) { // Restore only if input is empty
+            element.placeholder = element.getAttribute('data-placeholder');
+        }
+    }
+
+    // Function to set the initial icon state
+    function updatePasswordIcon() {
+        var passwordField = document.getElementById('password');
+        var icon = document.getElementById('togglePassword1').querySelector('i');
+        if (passwordField.getAttribute('type') === 'password') {
+            icon.classList.add('bi-eye-slash');
+            icon.classList.remove('bi-eye');
+        } else {
+            icon.classList.add('bi-eye');
+            icon.classList.remove('bi-eye-slash');
+        }
+    }
+
+    // Toggle password visibility
+    document.getElementById('togglePassword1').addEventListener(
+        'click', 
+        function() {
+            var passwordField = document.getElementById('password');
+            
+            var type = passwordField.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordField.setAttribute('type', type);
+            
+            // Update the icon based on the new type
+            updatePasswordIcon();
+            
+            // Remove focus from the button after clicking
+            this.blur();
+        }
+    );
+
+    // Set initial state of the icon
+    document.addEventListener('DOMContentLoaded', updatePasswordIcon);
+</script>
+
+<style>
+    .password-container {
+        position: relative;
+    }
+
+    .toggle-password {
+        position: absolute;
+        right: 10px; /* Adjust as needed */
+        top: 50%;
+        transform: translateY(-50%);
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        padding: 0;
+        z-index: 2; /* Ensures the button is above other elements */
+        outline: none; /* Remove outline on focus */
+    }
+
+    .toggle-password i {
+        font-size: 1.5em; /* Increased icon size */
+        color: #007bff; /* Primary color for visibility */
+        transition: color 0.3s ease; /* Smooth transition for color change */
+    }
+
+    .toggle-password:hover i {
+        color: #0056b3; /* Lighter shade for hover effect */
+    }
+
+    .form-control {
+        padding-right: 3em; /* Adjust padding to make room for the icon */
+    }
+
+    .form-control::placeholder {
+        color: #6c757d; /* Adjust color as needed */
+        opacity: 1; /* Ensure the placeholder text is fully opaque */
+    }
+
+    .toggle-password:focus, .toggle-password:active {
+        outline: none; /* Remove default focus outline */
+        box-shadow: none; /* Remove focus box-shadow if any */
+    }
+
+    .forgot-password-link {
+        color: #007bff; /* Link color */
+        text-decoration: none; /* Remove underline */
+    }
+    
+    .forgot-password-link:hover {
+        text-decoration: underline; /* Underline on hover */
+    }
+
+    .alert {
+        margin-bottom: 1rem; /* Spacing for alert */
+    }
+</style>
+
+{% endblock %}

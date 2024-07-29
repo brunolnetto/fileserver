@@ -1,0 +1,32 @@
+{% extends 'web/base.html' %}
+
+{% block title %}Página inicial{% endblock %}
+
+{% block content %}
+<div class="container">
+    {% if user.is_authenticated %}
+        {% if user.userprofile.uspr_first_login %}
+            <h1>Olá, {{ user.username }}!</h1>
+            <p>Este é sua primeira visita como usuário.</p>
+            <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    fetch("{% url 'update_first_login_flag' %}", {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': '{{ csrf_token }}'
+                        },
+                        body: JSON.stringify({})
+                    });
+                });
+            </script>
+        {% else %}
+            <h1> Bem vindo de volta, {{ user.username }}!</h1>
+        {% endif %}
+        <p>Use as opções na barra lateral para navegar diferentes seções do app.</p>
+    {% else %}
+        <h1>Bem vindo ao app.</h1>
+        <p>Por favor, cadasre ou entre utilizando a opção 'Logar' acima  para acessar o app.</p>
+    {% endif %}
+</div>
+{% endblock %}

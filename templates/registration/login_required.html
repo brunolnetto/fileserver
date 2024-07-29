@@ -1,0 +1,8 @@
+{% extends 'web/base.html' %}
+
+{% block title %}Login Required{% endblock %}
+
+{% block content %}
+<h1>Login Required</h1>
+<p>You need to be logged in to access this page. Please <a href="{% url 'login' %}">log in</a> or <a href="{% url 'signup' %}">sign up</a> if you don't have an account.</p>
+{% endblock %}

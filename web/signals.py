@@ -1,0 +1,24 @@
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from django.contrib.auth.models import User
+
+from .models import UserProfile, PendingRegistration
+from .views import send_confirmation_email
+
+@receiver(post_save, sender=User)
+def create_user_profile(sender, instance, created, **kwargs):
+    if created:
+        UserProfile.objects.create(uspr_user=instance)
+
+@receiver(post_save, sender=User)
+def save_user_profile(sender, instance, **kwargs):
+    try:
+        instance.userprofile.save()
+    except UserProfile.DoesNotExist:
+        # Handle the case where UserProfile does not exist
+        UserProfile.objects.create(uspr_user=instance)
+
+@receiver(post_save, sender=PendingRegistration)
+def send_confirmation_email_on_registration(sender, instance, created, **kwargs):
+    if created and not instance.pere_is_activated:
+        send_confirmation_email(instance)

@@ -1,0 +1,859 @@
+/* Define variables for light and dark modes */
+:root {
+    --text-color-light: #000; /* Dark text for light mode */
+    --text-color-dark: #fff; /* Light text for dark mode */
+    --bg-color-light: #fff; /* White background for light mode */
+    --bg-color-dark: #333; /* Dark background for dark mode */
+    --font-light: 'Arial', sans-serif; /* Default font for light mode */
+    --font-dark: 'Arial', sans-serif; /* Default font for dark mode */
+    --font-size: 16px; /* Font size for better readability */
+}
+
+/* Dark mode overrides */
+[data-theme='dark'] {
+    --background-color: #121212;
+    --text-color: #e0e0e0;
+    --border-color: #333333;
+    --button-background: #1e90ff;
+    --button-text: #000000;
+}
+
+body {
+    color: var(--text-color-light);
+    background-color: var(--bg-color-light);
+    font-family: var(--font-light);
+    font-size: var(--font-size);
+    margin: 0;
+    padding: 0;    
+}
+
+/* Light Mode Styles */
+body.light-mode .sidebar-container a {
+    background-color: #f8f9fa; /* Light background for buttons */
+    color: #000000; /* Dark text for light mode */
+}
+
+body.light-mode .navbar, 
+body.light-mode .sidebar {
+    background-color: #f8f9fa; /* Light background for navbar/sidebar */
+    color: #000000; /* Dark text for light mode */
+}
+
+body.light-mode .navbar a, 
+body.light-mode .sidebar a {
+    color: #000000; /* Dark links in light mode */
+}
+
+body.light-mode .custom-button {
+    background-color: #e74c3c; /* Red for delete button in light mode */
+}
+
+body.light-mode .btn-save {
+    background-color: #28a745; /* Green for save button in light mode */
+}
+
+body.light-mode .btn-edit {
+    background-color: #007bff; /* Blue for edit button in light mode */
+}
+
+body.light-mode .pagination-container {
+    color: #000000; /* Dark text for pagination in light mode */
+}
+
+/* Dark Mode Styles */
+body.dark-mode {
+    background-color: #121212;
+    color: #e0e0e0;
+}
+
+body.dark-mode .sidebar-container a {
+    background-color: #2c2c2c; /* Dark background for buttons */
+    color: #e0e0e0; /* Light text for dark mode */
+}
+
+body.dark-mode .sidebar-container a:hover {
+    background-color: #444444; /* Slightly lighter background on hover */
+}
+
+body.dark-mode .navbar, 
+body.dark-mode .sidebar {
+    background-color: #1e1e1e; /* Dark background for navbar/sidebar */
+    color: #e0e0e0; /* Light text for dark mode */
+}
+
+body.dark-mode .navbar a, 
+body.dark-mode .sidebar a {
+    color: #e0e0e0; /* Light links in dark mode */
+}
+
+body.dark-mode .navbar a:hover, 
+body.dark-mode .sidebar a:hover {
+    color: #ffffff; /* Lighter links on hover in dark mode */
+}
+
+body.dark-mode #data-table th, 
+body.dark-mode #data-table td {
+    background-color: #333333;
+    color: #e0e0e0;
+}
+
+body.dark-mode #data-table tbody tr:hover {
+    background-color: #444444;
+}
+
+body.dark-mode .custom-button {
+    background-color: #e74c3c; /* Red for delete button in dark mode */
+}
+
+body.dark-mode .custom-button:hover {
+    background-color: #c0392b; /* Darker red for hover effect */
+}
+
+body.dark-mode .btn-save {
+    background-color: #28a745; /* Green for save button in dark mode */
+}
+
+body.dark-mode .btn-save:hover {
+    background-color: #218838; /* Darker green for hover effect */
+}
+
+body.dark-mode .btn-edit {
+    background-color: #007bff; /* Blue for edit button in dark mode */
+}
+
+body.dark-mode .btn-edit:hover {
+    background-color: #0056b3; /* Darker blue for hover effect */
+}
+
+body.dark-mode .pagination-container {
+    color: #e0e0e0; /* Light text for pagination in dark mode */
+}
+
+body.dark-mode .page-link {
+    background-color: #1e1e1e; /* Dark background for pagination links */
+    color: #e0e0e0; /* Light text for pagination links */
+    border-color: #333333; /* Darker border for pagination links */
+}
+
+body.dark-mode .page-link:hover {
+    background-color: #333333; /* Darker background on hover */
+    color: #ffffff; /* Lighter text on hover */
+}
+
+body.dark-mode .page-item.disabled .page-link {
+    color: #6c757d; /* Disabled text color */
+}
+
+body.dark-mode .page-item.active .page-link {
+    background-color: #007bff; /* Active page item background */
+    border-color: #007bff; /* Active page item border */
+    color: #ffffff; /* Active page item text color */
+}
+
+/* Sidebar */
+body.dark-mode .sidebar {
+    background-color: #1e1e1e; /* Dark background for sidebar */
+    color: #e0e0e0; /* Light text for sidebar */
+}
+
+body.dark-mode .sidebar a {
+    color: #e0e0e0; /* Light links in sidebar */
+}
+
+body.dark-mode .sidebar a:hover {
+    color: #ffffff; /* Lighter links on hover in sidebar */
+}
+
+.pagination {
+    display: flex;
+    justify-content: center;
+    padding: 0;
+    margin: 0;
+    list-style: none;
+}
+
+.page-item {
+    margin: 0 5px;
+}
+
+.page-item .page-link {
+    display: block;
+    padding: 8px 16px;
+    font-size: 1rem;
+    color: #007bff;
+    text-decoration: none;
+    border-radius: 4px;
+}
+
+.page-item.active .page-link {
+    background-color: #007bff;
+    color: #fff;
+}
+
+.page-item.disabled .page-link {
+    color: #6c757d;
+    pointer-events: none;
+}
+
+/* Toggle button styling */
+.theme-toggle-btn {
+    background: none;
+    border: 1px solid #ccc; /* Light border for better visibility */
+    border-radius: 4px; /* Rounded corners */
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px; /* Adequate padding for better click area */
+    transition: background-color 0.3s, border-color 0.3s; /* Smooth transitions */
+    border-radius: 4px; /* Rounded corners for better aesthetics */
+}
+
+/* Light Mode Styles */
+body.light-mode .theme-toggle-btn {
+    background-color: #f0f0f0; /* Light background */
+    border: 1px solid #ccc; /* Light border */
+}
+
+body.light-mode .fa-sun {
+    visibility: visible;
+    color: #f39c12; /* Color for the sun icon */
+}
+
+body.light-mode .fa-moon {
+    visibility: hidden; /* Hide the moon icon in light mode */
+}
+
+/* Dark Mode Styles */
+body.dark-mode .theme-toggle-btn {
+    background-color: #1e1e1e; /* Dark background */
+    border: 1px solid #333; /* Darker border */
+}
+
+body.dark-mode .fa-sun {
+    visibility: hidden; /* Hide the sun icon in dark mode */
+}
+
+body.dark-mode .fa-moon {
+    visibility: visible; /* Show the moon icon in dark mode */
+    color: #fff; /* Light color for the moon icon */
+}
+
+/* Ensure consistent icon size */
+.theme-toggle-btn i {
+    font-size: 20px; /* Adjust icon size as needed */
+    transition: color 0.3s; /* Smooth color transition */
+}
+.sidebar-container {
+    display: flex;
+    min-height: 100vh; /* Ensure the sidebar takes full height */
+    flex-direction: column; /* Ensure footer is at the bottom */
+}
+
+.sidebar-container .bi {
+    font-size: 1.5rem; /* Adjust size as needed */
+    transition: color 0.3s; /* Smooth transition for color changes */
+    margin-right: 8px; /* Space between icon and text */
+}
+
+/* Active or Selected State */
+.sidebar-container a.active {
+    background-color: #007bff; /* Blue background for active link */
+    color: #ffffff; /* White text for active link */
+}
+
+.sidebar-container a.active:hover {
+    background-color: #0056b3; /* Darker blue on hover for active link */
+}
+
+/* Sidebar Styles */
+.sidebar {
+    height: 100vh;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 250px;
+    background-color: #f8f9fa;
+    padding-top: 20px;
+    transition: width 0.3s ease, padding 0.3s ease;
+    overflow: hidden;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+}
+
+.sidebar.collapsed {
+    width: 80px;
+}
+
+.sidebar a {
+    display: flex;
+    align-items: center;
+    justify-content: space-between; /* Adjust for non-collapsed state */
+    padding: 10px;
+    width: 100%;
+    background-color: #f8f9fa;
+    box-sizing: border-box;
+    text-decoration: none;
+    color: #333;
+    border-right: 1px solid #ddd;
+    transition: background-color 0.3s ease;
+    position: relative;
+}
+
+/* Sidebar link icon */
+.sidebar a i {
+    font-size: 24px;
+    margin-right: 10px; /* Space between icon and text */
+}
+
+/* Sidebar link text */
+.sidebar a span {
+    white-space: nowrap; /* Prevent text wrapping */
+    overflow: hidden; /* Hide overflow text */
+    text-overflow: ellipsis; /* Add ellipsis for overflow text */
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+/* Hide text in collapsed sidebar */
+.sidebar.collapsed a span {
+    opacity: 0;
+    visibility: hidden;
+}
+
+/* Adjust sidebar link layout for collapsed state */
+.sidebar.collapsed a {
+    justify-content: center; /* Center horizontally when collapsed */
+    text-align: center; /* Ensure text aligns correctly */
+}
+
+/* Hover effect for sidebar links */
+.sidebar a:hover {
+    background-color: #ddd;
+}
+
+/* Footer in the sidebar */
+.sidebar-bottom {
+    margin-top: auto; /* Push footer items to the bottom */
+}
+
+.settings, .logout {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    color: #007bff;
+    text-decoration: none;
+}
+
+.settings:hover, .logout:hover {
+    background-color: #e9ecef;
+    color: #0056b3;
+}
+
+.settings i, .logout i {
+    font-size: 1.5em; /* Adjust icon size */
+    margin-right: 8px;
+}
+
+.settings span, .logout span {
+    display: none; /* Hide text in settings and logout by default */
+}
+
+/* Ensure proper alignment when collapsed */
+.sidebar.collapsed .home-button,
+.sidebar.collapsed .other-icons,
+.sidebar.collapsed .sidebar-bottom {
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Center items horizontally */
+    margin-right: 10px; /* Adjust margin to create space from the right edge */
+}
+
+/* Ensure text visibility in collapsed state */
+.sidebar .home-button span,
+.sidebar .other-icons span,
+.sidebar .sidebar-bottom span {
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.3s ease, visibility 0.3s ease; /* Smooth transition for text visibility */
+}
+
+/* Hide text when sidebar is collapsed */
+.sidebar.collapsed .home-button span,
+.sidebar.collapsed .other-icons span,
+.sidebar.collapsed .sidebar-bottom span {
+    opacity: 0;
+    visibility: hidden; /* Ensure text is not clickable */
+}
+
+/* Ensure text visibility in collapsed state */
+.sidebar .home-button span,
+.sidebar .other-icons span,
+.sidebar .sidebar-bottom span {
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.3s ease, visibility 0.3s ease; /* Smooth transition for text visibility */
+}
+
+/* Center icons and adjust alignment */
+.sidebar .home-button a,
+.sidebar .other-icons a,
+.sidebar .sidebar-bottom a {
+    display: flex;
+    align-items: center;
+    justify-content: center; /* Center text and icons horizontally */
+    text-align: center; /* Center text */
+    padding: 10px; /* Add padding for better click area */
+}
+
+/* Adjust icon size and spacing */
+.sidebar i {
+    font-size: 24px; /* Adjust icon size */
+    margin-left: 10px; /* Space between icon and text */
+}
+
+/* Ensure proper alignment when collapsed */
+.sidebar.collapsed .home-button,
+.sidebar.collapsed .other-icons,
+.sidebar.collapsed .sidebar-bottom {
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Center items horizontally */
+    margin-right: 10px; /* Adjust margin to create space from the right edge */
+}
+
+/* Dark Mode Sidebar */
+body.dark-mode .sidebar {
+    background-color: #1e1e1e;
+    color: #e0e0e0;
+}
+
+.custom-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.custom-button:hover {
+    background-color: #0056b3;
+}
+
+.editable-mode {
+    background-color: #f0f0f0;
+    border: 1px solid #ccc;
+}
+
+.editable[contenteditable="true"] {
+    border: 1px solid #007bff;
+}
+
+/* Sidebar when collapsed */
+.sidebar.collapsed {
+    width: 60px; /* Adjust to the collapsed width */
+    overflow: hidden;
+}
+
+.sidebar a {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px;
+    width: 100%;
+    background-color: #f8f9fa; /* Background color */
+    box-sizing: border-box;
+    text-decoration: none;
+    padding: 15px; /* Padding for the sidebar */
+    color: #333;
+    border-right: 1px solid #ddd; /* Border to the right */
+    transition: background-color 0.3s ease;
+    position: relative; /* Ensure relative positioning for centering */
+}
+
+.text-right {
+    text-align: right;
+}
+
+.sidebar a i {
+    font-size: 24px;
+    margin-right: 10px; /* Space between icon and text */
+}
+
+.sidebar a span {
+    margin-left: 10px;
+    opacity: 1;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+    white-space: nowrap; /* Prevent text wrapping */
+}
+
+.sidebar.collapsed a span {
+    opacity: 0;
+    visibility: hidden;
+    margin-left: 0;
+}
+
+.sidebar.collapsed a i {
+    margin-right: 0; /* Remove margin when collapsed */
+}
+
+.sidebar a {
+    justify-content: center; /* Center horizontally when collapsed */
+}
+
+.sidebar a span {
+    margin-left: 0; /* Ensure no extra margin when text is hidden */
+}
+
+.sidebar.collapsed a {
+    justify-content: center; /* Center horizontally when collapsed */
+    text-align: center; /* Ensure text aligns correctly */
+}
+
+.sidebar a:hover {
+    background-color: #ddd;
+}
+
+.content {
+    margin-left: 250px;
+    padding: 20px;
+    transition: margin-left 0.3s ease, width 0.3s ease;
+    width: calc(100% - 250px);
+}
+
+.content.expanded {
+    margin-left: 80px;
+    width: calc(100% - 80px);
+}
+
+.home-button {
+    width: 100%;
+    text-align: center;
+}
+
+.home-button a {
+    display: block;
+    padding: 15px;
+}
+
+.navbar-nav .nav-item .nav-link {
+    color: #333;
+}
+
+.navbar-nav .nav-item .nav-link:hover {
+    color: #007bff;
+}
+
+/* Optional: Add a border to the bottom of the navbar */
+.navbar {
+    border-bottom: 1px solid #ddd;
+}
+
+.form-container {
+    max-width: 400px; /* Adjust as needed */
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.form-group {
+    position: relative;
+    margin-bottom: 15px;
+}
+    
+.toggle-password {
+    position: absolute;
+    right: 10px; /* Adjust this value as needed */
+    top: 50%;
+    transform: translateY(-50%);
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    padding: 0;
+}
+
+.toggle-password i {
+    font-size: 1.25em; /* Adjust size as needed */
+}
+
+.form-control {
+    padding: 10px;
+}
+
+/* General button styling */
+.btn {
+    display: inline-block;
+    font-weight: 400;
+    height: auto;
+    line-height: 1.5;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: middle;
+    user-select: none;
+    border: 1px solid transparent;
+    padding: 0.375rem 0.75rem;          /* Consistent padding for height and width */
+    font-size: 1rem;                    /* Consistent font size */
+    line-height: 1.5;                   /* Consistent line height */
+    border-radius: 0.25rem;             /* Consistent border radius */
+    transition: all 0.15s ease-in-out;  /* Smooth transition effects */
+}
+
+/* Dark mode styles */
+@media (prefers-color-scheme: dark) {
+    body {
+        color: var(--text-color-dark);
+        background-color: var(--bg-color-dark);
+    }
+}
+
+/* Table styles */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: var(--bg-color-light); /* Adjust if needed for dark mode */
+}
+
+thead {
+    background-color: var(--bg-color-light); /* Light background for table header */
+    color: var(--text-color-light);
+}
+
+tbody tr:nth-child(even) {
+    background-color: var(--bg-color-light);
+}
+
+tbody tr:nth-child(odd) {
+    background-color: var(--bg-color-light); /* Change if needed for better contrast */
+}
+
+td, th {
+    padding: 8px;
+    border: 1px solid #ddd; /* Border color */
+    color: var(--text-color-light);
+}
+
+@media (prefers-color-scheme: dark) {
+    table {
+        background-color: var(--bg-color-dark);
+    }
+
+    thead {
+        background-color: var(--bg-color-dark);
+        color: var(--text-color-dark);
+    }
+
+    tbody tr:nth-child(even) {
+        background-color: var(--bg-color-dark);
+    }
+
+    tbody tr:nth-child(odd) {
+        background-color: var(--bg-color-dark);
+    }
+
+    td, th {
+        border: 1px solid #444; /* Darker border for dark mode */
+        color: var(--text-color-dark);
+    }
+}
+
+/* Button text adjustments */
+.btn:hover,
+.btn:focus {
+    text-decoration: none; /* Ensures no text underline on hover/focus */
+}
+
+/* Button specifically for changing password */
+.btn-change-password {
+    color: #fff;
+    background-color: #28a745; /* Green for "Change Password" */
+    border-color: #28a745;
+}
+
+.btn-change-password:hover {
+    color: #fff;
+    background-color: #218838; /* Darker green on hover */
+    border-color: #1e7e34;     /* Darker border on hover */
+}
+
+/* Adjust spacing and appearance if needed */
+.settings-content {
+    margin-top: 20px;
+}
+
+.form-control-sm {
+    padding: 8px;
+}
+
+.position-absolute {
+    position: absolute;
+}
+
+.end-0 {
+    right: 0;
+}
+
+.top-50 {
+    top: 50%;
+}
+
+.translate-middle-y {
+    transform: translateY(-50%);
+}
+
+.text-center {
+    text-align: center;
+}
+
+/* styles.css or within a <style> block */
+.upload-btn {
+    background-color: #007bff; /* Blue background for Upload */
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.upload-btn:hover {
+    background-color: #0056b3; /* Darker blue on hover */
+}
+
+.reset-btn {
+    background-color: #6c757d; /* Grey background for Reset */
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.reset-btn:hover {
+    background-color: #5a6268; /* Darker grey on hover */
+}
+
+.home-button {
+    margin-bottom: 15px; /* Space between home button and other icons */
+}
+
+.other-icons {
+    flex-grow: 1; /* Allow the section to take up available space */
+}
+
+.sidebar-bottom {
+    margin-top: auto; /* Push settings and logout to the bottom */
+}
+
+.settings, .logout {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    color: #007bff; /* Color for icons */
+    text-decoration: none;
+}
+
+.settings:hover, .logout a:hover {
+    background-color: #e9ecef; /* Background color on hover */
+    color: #0056b3; /* Darker color on hover */
+}
+
+.settings-menu {
+    margin-bottom: 20px;
+}
+
+.settings-menu ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+.settings-menu li {
+    display: inline;
+    margin-right: 20px;
+}
+
+.settings-menu a {
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.settings-content > div {
+    margin-bottom: 40px;
+}
+
+.settings-content .form-group {
+    margin-bottom: 20px;
+}
+
+.settings-menu a.active {
+    font-weight: bold;
+    color: #007bff; /* Example color */
+}
+
+.alert-container {
+    margin-top: 20px;
+}
+
+.messages {
+    list-style: none;
+    padding: 0;
+}
+
+.messages li {
+    margin-bottom: 10px;
+}
+
+.alert {
+    padding: 15px;
+    border-radius: 4px;
+}
+
+.alert.alert-success {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.alert.alert-error {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+
+.sidebar-bottom a {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+}
+
+.settings i, .logout i {
+    font-size: 1.5em; /* Adjust icon size */
+    margin-right: 8px; /* Space between icon and text */
+}
+
+
+/* Optional: Add a border to the bottom of the navbar */
+.navbar {
+    border-bottom: 1px solid #ddd; 
+}
+
+html, body {
+    height: 100%;
+    margin: 0;
+}
+
+.content {
+    min-height: calc(100vh - 60px); /* Adjust based on footer height */
+}
+
+.footer {
+    position: relative;
+    margin-top: -60px; /* Adjust based on footer height */
+    height: 60px;
+    clear: both;
+}
+
+
+

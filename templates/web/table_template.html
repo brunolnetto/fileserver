@@ -1,0 +1,294 @@
+{% extends 'web/base.html' %}
+
+{% load custom_filters %}
+
+{% block title %}Tabela {{ model_name }}{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Tabela {{ model_name }}</h1>
+
+<div id="table-content">
+    {% if objects %}
+    <form id="delete-form">
+        {% csrf_token %}
+        <div class="button-container">
+            <button type="button" class="custom-button">
+                <i class="bi bi-trash"></i>
+            </button>
+            <button type="button" id="save-button">
+                <i class="bi bi-save"></i>
+            </button>
+        </div>
+        <table class="table table-striped" id="data-table">
+            <thead>
+                <tr>
+                    <th><input type="checkbox" id="select-all"></th>
+                    {% with column_labels=objects.0.get_column_labels %}
+                        {% for field_name, label in column_labels.items %}
+                            <th class="sortable" data-field="{{ field_name }}">{{ label }}
+                                <span class="sort-indicator"></span>
+                            </th>
+                        {% endfor %}
+                        <th>Ações</th>
+                    {% endwith %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for obj in objects %}
+                    <tr data-id="{{ obj.id }}">
+                        <td><input type="checkbox" class="item-select" data-id="{{ obj.id }}"></td>
+                        {% with editable_columns=obj.get_editable_columns %}
+                            {% for field in fields %}
+                                <td 
+                                    class="{% if field.name in editable_columns %}editable{% endif %} {% if field.name == 'filename' %}filename-cell{% endif %}"
+                                    data-field="{{ field.name }}"
+                                    {% if field.name == 'filename' %}data-filename="{{ obj|get_field_value:field.name }}"{% endif %}
+                                >
+                                    {% if field.name == 'filename' %}
+                                        {{ obj|get_field_value:field.name|truncatechars:20 }} <!-- Truncate filename to 20 characters -->
+                                    {% else %}
+                                        {{ obj|get_field_value:field.name }}
+                                    {% endif %}
+                                </td>
+                            {% endfor %}
+                            <td>
+                                <button type="button" class="btn btn-primary btn-edit">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                            </td>
+                        {% endwith %}
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="{{ column_labels|length }}">Não encontramos registros</td>
+                    </tr>
+                {% endfor %}
+            </tbody>            
+        </table>
+    </form>
+    {% else %}
+    <p class="text-center">Dados não disponíveis.</p>
+    {% endif %}
+</div>
+
+<div class="pagination-container mt-3">
+    <nav aria-label="Page navigation">
+        <ul class="pagination justify-content-center">
+
+            <!-- First and Previous Page Links -->
+            {% if objects.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="{% url 'table_view' model_name=model_name %}?page=1" aria-label="First">
+                        <span aria-hidden="true">&laquo;&laquo;</span>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="{% url 'table_view' model_name=model_name %}?page={{ objects.previous_page_number }}" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+            {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">&laquo;&laquo;</span>
+                </li>
+                <li class="page-item disabled">
+                    <span class="page-link">&laquo;</span>
+                </li>
+            {% endif %}
+
+            <!-- Page Number Links -->
+            {% for page_num in objects.paginator.page_range %}
+                {% if page_num >= objects.number|add:'-5' and page_num <= objects.number|add:'5' %}
+                    <li class="page-item{% if objects.number == page_num %} active{% endif %}">
+                        <a class="page-link" href="{% url 'table_view' model_name=model_name %}?page={{ page_num }}">{{ page_num }}</a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+
+            <!-- Next and Last Page Links -->
+            {% if objects.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="{% url 'table_view' model_name=model_name %}?page={{ objects.next_page_number }}" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="{% url 'table_view' model_name=model_name %}?page={{ objects.paginator.num_pages }}" aria-label="Last">
+                        <span aria-hidden="true">&raquo;&raquo;</span>
+                    </a>
+                </li>
+            {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">&raquo;</span>
+                </li>
+                <li class="page-item disabled">
+                    <span class="page-link">&raquo;&raquo;</span>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+</div>
+
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const table = document.getElementById('data-table');
+        const deleteButton = document.querySelector('.custom-button');
+        const selectAllCheckbox = document.getElementById('select-all');
+        const itemSelectCheckboxes = table.querySelectorAll('.item-select');
+        const csrfToken = document.querySelector('input[name="csrfmiddlewaretoken"]').value;
+        const saveButton = document.getElementById('save-button');
+        const modelName = "{{ model_name }}";
+        
+        // Sort Table
+        const headers = table.querySelectorAll('th.sortable');
+        let currentSortField = null;
+        let currentSortOrder = 'asc';
+    
+        headers.forEach(header => {
+            header.addEventListener('click', function() {
+                const field = this.getAttribute('data-field');
+                if (currentSortField === field) {
+                    currentSortOrder = currentSortOrder === 'asc' ? 'desc' : 'asc';
+                } else {
+                    currentSortField = field;
+                    currentSortOrder = 'asc';
+                }
+    
+                sortTable(field, currentSortOrder);
+                updateSortIndicators();
+            });
+        });
+    
+        function sortTable(field, order) {
+            const rows = Array.from(table.querySelectorAll('tbody tr'));
+            rows.sort((a, b) => {
+                const cellA = a.querySelector(`[data-field="${field}"]`).textContent.trim();
+                const cellB = b.querySelector(`[data-field="${field}"]`).textContent.trim();
+    
+                if (order === 'asc') {
+                    return cellA.localeCompare(cellB, undefined, { numeric: true });
+                } else {
+                    return cellB.localeCompare(cellA, undefined, { numeric: true });
+                }
+            });
+    
+            const tbody = table.querySelector('tbody');
+            rows.forEach(row => tbody.appendChild(row));
+        }
+    
+        function updateSortIndicators() {
+            headers.forEach(header => {
+                header.querySelector('.sort-indicator').classList.remove('asc', 'desc');
+                if (header.getAttribute('data-field') === currentSortField) {
+                    header.querySelector('.sort-indicator').classList.add(currentSortOrder);
+                }
+            });
+        }
+    
+        // Edit and Save Buttons
+        const editButtons = document.querySelectorAll('.btn-edit');
+    
+        editButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const row = this.closest('tr');
+                const cells = row.querySelectorAll('.editable');
+                const isEditing = this.querySelector('i').classList.contains('bi-pencil');
+                
+                cells.forEach(cell => {
+                    cell.contentEditable = isEditing;
+                    cell.classList.toggle('editable-mode', isEditing);
+                });
+    
+                const icon = this.querySelector('i');
+                if (isEditing) {
+                    icon.classList.replace('bi-pencil', 'bi-save');
+                    this.setAttribute('title', 'Save changes');
+                } else {
+                    icon.classList.replace('bi-save', 'bi-pencil');
+                    this.setAttribute('title', 'Edit');
+                }
+            });
+        });
+    
+        saveButton.addEventListener('click', function() {
+            const rows = document.querySelectorAll('#data-table tbody tr');
+            const updatedData = [];
+            
+            rows.forEach(row => {
+                const cells = row.querySelectorAll('.editable');
+                const id = row.getAttribute('data-id');
+                
+                if (id) {
+                    const data = { id: id };
+                    cells.forEach(cell => {
+                        const fieldName = cell.getAttribute('data-field');
+                        const fieldValue = cell.textContent.trim();
+    
+                        if (fieldName) {
+                            data[fieldName] = fieldValue;
+                        }
+                    });
+                    updatedData.push(data);
+                }
+            });
+        
+            const xhr = new XMLHttpRequest();
+            const updateUrl = "{% url 'update_data' model_name=model_name %}";
+        
+            xhr.open('POST', updateUrl, true);
+            xhr.setRequestHeader('X-CSRFToken', csrfToken);
+            xhr.setRequestHeader('Content-Type', 'application/json;charset=UTF-8');
+        
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    if (xhr.status === 200) {
+                        alert('Changes saved successfully.');
+                    } else {
+                        alert('Error saving changes.');
+                    }
+                }
+            };
+        
+            xhr.send(JSON.stringify({ updates: updatedData }));
+        });
+    
+        // Handle select all checkbox
+        selectAllCheckbox.addEventListener('change', function() {
+            itemSelectCheckboxes.forEach(checkbox => checkbox.checked = this.checked);
+        });
+    
+        // Handle delete button
+        deleteButton.addEventListener('click', function() {
+            const selectedIds = Array.from(itemSelectCheckboxes)
+                .filter(checkbox => checkbox.checked)
+                .map(checkbox => checkbox.getAttribute('data-id'));
+    
+            if (selectedIds.length === 0) {
+                alert('Please select at least one item to delete.');
+                return;
+            }
+    
+            const xhr = new XMLHttpRequest();
+            const deleteUrl = "{% url 'delete_selected_data' model_name=model_name %}";
+    
+            xhr.open('POST', deleteUrl, true);
+            xhr.setRequestHeader('X-CSRFToken', csrfToken);
+            xhr.setRequestHeader('Content-Type', 'application/json;charset=UTF-8');
+    
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    if (xhr.status === 200) {
+                        alert('Items deleted successfully.');
+                        location.reload(); // Refresh the page to reflect changes
+                    } else {
+                        alert('Error deleting items.');
+                    }
+                }
+            };
+    
+            xhr.send(JSON.stringify({ ids: selectedIds }));
+        });
+    });    
+</script>
+{% endblock %}

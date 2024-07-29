@@ -1,38 +1,53 @@
 services:
   db:
     image: postgres:14
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
+    restart: always
     ports: 
-      - 5432:5432
+      - "${DATABASE_PORT}:5432"
     environment:
-      POSTGRES_HOST: ${DATABASE_HOST}
       POSTGRES_PORT: ${DATABASE_PORT}
       POSTGRES_USER: ${DATABASE_USER}
       POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
       POSTGRES_DB: ${DATABASE_NAME}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - default
 
   redis:
-    image: redis:7
+    restart: unless-stopped
+    image: redis:7.0.5-alpine 
+    ports: 
+      - "6379:6379"
+    networks:
+      - default
 
   web:
+    restart: unless-stopped
     build:
       context: .
-      dockerfile: build/django/Dockerfile
+      dockerfile: ./build/Dockerfile
+    command:
+      - /start-django.sh
     volumes:
       - .:/app
+      - static_volume:/app/backend/django_static
     ports:
-      - "8000:8000"
+      - "${DJANGO_PORT}:8000"
     env_file:
       - .env
     depends_on:
       - db
       - redis
+    networks:
+      - default
 
-  celery:
+  celery-worker:
     build:
       context: .
-      dockerfile: build/celery/Dockerfile
+      dockerfile: ./build/Dockerfile
+    command:
+      - /start-celery-worker.sh
     volumes:
       - .:/app
     env_file:
@@ -40,12 +55,15 @@ services:
     depends_on:
       - db
       - redis
+    networks:
+      - default
 
   celery-beat:
     build:
       context: .
-      dockerfile: build/celery/Dockerfile
-    entrypoint: ["sh", "/app/build/celery/entrypoint-beat.sh"]
+      dockerfile: ./build/Dockerfile
+    command:
+      - /start-celery-beat.sh
     volumes:
       - .:/app
     env_file:
@@ -53,17 +71,25 @@ services:
     depends_on:
       - db
       - redis
+    networks:
+      - default
 
-  flower:
-    image: mher/flower:latest
-    command: ['flower', '--broker=redis://redis:6379', '--port=5555']
+  celery-flower:
+    image: mher/flower
+    container_name: flower
+    environment:
+      - CELERY_BROKER_URL=${CELERY_BROKER_URL}
+      - FLOWER_PORT=8888
     ports:
-      - "5555:5555"
-    env_file:
-      - .env
-    depends_on:
-      - redis
-      - celery
+    - 8888:8888
+    volumes:
+    - flower_data:/data
 
 volumes:
+  static_volume:
   postgres_data:
+  flower_data:
+
+networks:
+  default:
+    driver: bridge

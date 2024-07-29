@@ -1,0 +1,319 @@
+{% extends 'web/base.html' %}
+
+{% block title %}Cadastro{% endblock %}
+
+{% block content %}
+<h1>Cadastro</h1>
+<form method="post" id="signup-form" class="form-container">
+    {% csrf_token %}
+    
+    <!-- Username Field -->
+    <div class="form-group">
+        <label for="username">Usuário:</label>
+        <div class="input-group">
+            <input 
+                type="text" 
+                id="username" 
+                name="username" 
+                class="form-control form-control-sm" 
+                placeholder="Insira usuário" 
+                required            
+                onfocus="clearPlaceholder(this)" 
+                onblur="restorePlaceholder(this)"
+            >
+        </div>
+        <div id="username-status" class="input-group-append">
+            <!-- Space reserved for the icon -->
+            <span id="username-icon" class="icon-placeholder"></span>
+        </div>
+        <div id="username-feedback" class="feedback text-danger"></div>
+        <div id="username-loading" class="loading-text"></div>
+    </div>
+
+    <!-- Email Field -->
+    <div class="form-group">
+        <label for="email">E-mail:</label>
+        <input 
+            type="email" 
+            id="email" 
+            name="email" 
+            class="form-control form-control-sm" 
+            placeholder="Insira e-mail" 
+            required
+            onfocus="clearPlaceholder(this)" 
+            onblur="restorePlaceholder(this)"
+        >
+        <div id="email-error" class="text-danger"></div>
+    </div>
+
+    <!-- Password Field -->
+    <div class="form-group">
+        <label for="password1">Senha:</label>
+        <div class="password-container">
+            <input 
+                type="password" 
+                id="password1" 
+                name="password1" 
+                class="form-control form-control-sm" 
+                placeholder="Insira senha" 
+                required
+                onfocus="clearPlaceholder(this)" 
+                onblur="restorePlaceholder(this)"
+            >
+            <button type="button" id="togglePassword1" class="toggle-password">
+                <i class="bi bi-eye-slash"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Confirm Password Field -->
+    <div class="form-group">
+        <label for="password2">Confirmar senha:</label>
+        <div class="password-container">
+            <input 
+                type="password" 
+                id="password2" 
+                name="password2" 
+                class="form-control form-control-sm" 
+                placeholder="Confirme senha" 
+                required
+                onfocus="clearPlaceholder(this)" 
+                onblur="restorePlaceholder(this)"
+            >
+            <button type="button" id="togglePassword2" class="toggle-password">
+                <i class="bi bi-eye-slash"></i>
+            </button>
+        </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Cadastrar</button>
+</form>
+
+<script>
+    // Function to clear placeholder on focus
+    function clearPlaceholder(element) {
+        element.setAttribute('data-placeholder', element.placeholder); // Save current placeholder
+        element.placeholder = ''; // Clear placeholder
+    }
+
+    // Function to restore placeholder on blur
+    function restorePlaceholder(element) {
+        if (!element.value) { // Restore only if input is empty
+            element.placeholder = element.getAttribute('data-placeholder');
+        }
+    }
+
+    // Toggle password visibility
+    document.getElementById('togglePassword1').addEventListener('click', function() {
+        var passwordField = document.getElementById('password1');
+        var type = passwordField.getAttribute('type') === 'password' ? 'text' : 'password';
+        passwordField.setAttribute('type', type);
+
+        var icon = this.querySelector('i');
+        icon.classList.toggle('bi-eye-slash', type === 'password');
+        icon.classList.toggle('bi-eye', type === 'text');
+    });
+
+    document.getElementById('togglePassword2').addEventListener('click', function() {
+        var passwordField = document.getElementById('password2');
+        var type = passwordField.getAttribute('type') === 'password' ? 'text' : 'password';
+        passwordField.setAttribute('type', type);
+        
+        var icon = this.querySelector('i');
+        icon.classList.toggle('bi-eye-slash', type === 'password');
+        icon.classList.toggle('bi-eye', type === 'text');
+    });
+
+    // Check username availability on each input change
+    document.getElementById('username').addEventListener('input', function() {
+        var username = this.value;
+        var usernameFeedback = document.getElementById('username-feedback');
+        var usernameLoading = document.getElementById('username-loading');
+    
+        // Reset feedback text
+        usernameFeedback.textContent = '';
+    
+        if (username.length > 0) {
+            // Show loading message immediately
+            usernameLoading.textContent = 'Checando disponibilidade...';
+    
+            // Function to handle the delayed display of the result
+            function displayAvailability(resultText, isAvailable) {
+                usernameLoading.textContent = '';
+                usernameFeedback.textContent = resultText;
+                if (isAvailable) {
+                    usernameFeedback.classList.add('text-success');
+                    usernameFeedback.classList.remove('text-danger');
+                } else {
+                    usernameFeedback.classList.add('text-danger');
+                    usernameFeedback.classList.remove('text-success');
+                }
+            }
+    
+            // Start the delay timer
+            var loadingTimeout = setTimeout(() => {
+                // Perform the fetch request after delay
+                fetch('/check-username/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('input[name="csrfmiddlewaretoken"]').value
+                    },
+                    body: JSON.stringify({ username: username })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    displayAvailability(data.exists ? 'Usuário já existe.' : 'Usuário está disponível!', !data.exists);
+                })
+                .catch(() => {
+                    // Handle network errors
+                    displayAvailability('Erro ao checar disponibilidade.', false);
+                });
+            }, 250);
+        } else {
+            // Clear feedback if the username field is empty
+            usernameLoading.textContent = '';
+            usernameFeedback.textContent = '';
+        }
+    });    
+    
+
+    // Client-side validation on form submit
+    document.getElementById('signup-form').addEventListener('submit', function(event) {
+        var username = document.getElementById('username').value;
+        var email = document.getElementById('email').value;
+        var password1 = document.getElementById('password1').value;
+        var password2 = document.getElementById('password2').value;
+        var usernameFeedback = document.getElementById('username-feedback');
+        var emailError = document.getElementById('email-error');
+        var valid = true;
+
+        // Check if passwords match
+        if (password1 !== password2) {
+            alert('Passwords do not match.');
+            valid = false;
+        }
+
+        // Check username and email errors
+        if (usernameFeedback.textContent.includes('já existe')) {
+            valid = false;
+        }
+
+        if (emailError.textContent.includes('já existe')) {
+            valid = false;
+        }
+
+        // Prevent form submission if there are validation errors
+        if (!valid) {
+            event.preventDefault();
+        }
+    });
+</script>
+
+<style>
+    .password-container {
+        position: relative;
+    }
+
+    .toggle-password {
+        position: absolute;
+        right: 10px; /* Adjust as needed */
+        top: 50%;
+        transform: translateY(-50%);
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        padding: 0;
+        z-index: 2; /* Ensures the button is above other elements */
+        outline: none; /* Remove outline on focus */
+    }
+
+    .toggle-password i {
+        font-size: 1.5em; /* Increased icon size */
+        color: #007bff; /* Primary color for visibility */
+        transition: color 0.3s ease; /* Smooth transition for color change */
+    }
+
+    .toggle-password:hover i {
+        color: #0056b3; /* Lighter shade for hover effect */
+    }
+
+    .form-control {
+        padding-right: 3em; /* Adjust padding to make room for the icon */
+    }
+
+    .toggle-password:focus, .toggle-password:active {
+        outline: none; /* Remove default focus outline */
+        box-shadow: none; /* Remove focus box-shadow if any */
+    }
+
+    .feedback {
+        font-size: 0.875em;
+    }
+
+    .form-group {
+        position: relative;
+    }
+    
+    .input-group {
+        display: flex;
+        align-items: center;
+        position: relative;
+    }
+
+    .input-group-append {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .input-group-text {
+        width: 2.5em; /* Fixed width for consistency */
+        height: 100%;
+        display: flex;
+        background: transparent;
+        border: none;
+        align-items: center;
+        justify-content: center;
+        min-width: 2.5em; /* Ensures the container maintains space even when empty */
+    }
+
+    .icon-placeholder {
+        display: inline-block;
+        width: 2em; /* Adjust width to provide space for the icon */
+        height: 1.5em; /* Adjust height as needed */
+    }
+
+    .input-group-text.bi {
+        font-size: 1.25em;
+    }
+
+    .feedback, .loading-text {
+        position: absolute;
+        bottom: -1.5em; /* Adjust to be close to the input field */
+        left: 0;
+        width: 100%;
+        font-size: 0.875em; /* Smaller text for feedback */
+    }
+    
+    .feedback {
+        margin-top: 0.25em; /* Space between input field and feedback */
+        font-size: 0.875em; /* Slightly smaller font size for feedback */
+    }
+    
+    .feedback.text-success {
+        color: #28a745; /* Green for available */
+    }
+    
+    .feedback.text-danger {
+        color: #dc3545; /* Red for not available */
+    }
+    
+    
+    .loading-text {
+        color: #6c757d; /* Gray for loading state */
+        font-size: 0.875em; /* Smaller text for loading */
+    }
+</style>
+    
+{% endblock %}

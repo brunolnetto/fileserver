@@ -1,0 +1,58 @@
+{% extends 'web/base.html' %}
+
+{% block title %}Configurações{% endblock %}
+
+{% block content %}
+<h2>Configurações</h2>
+
+<!-- Settings Menu -->
+<div class="settings-menu">
+    <ul>
+        <li><a href="#profile-settings" class="{% if request.path == '/settings/#profile-settings' %}active{% endif %}">Perfil</a></li>
+        <li><a href="#account-settings" class="{% if request.path == '/settings/#account-settings' %}active{% endif %}">Conta</a></li>
+        <!-- Add more sections as needed -->
+    </ul>
+</div>
+
+<!-- Settings Content -->
+<div class="settings-content">
+    <!-- Profile Settings -->
+    <div id="profile-settings">
+        <h3>Perfil</h3>
+        <form method="post" action="{% url 'settings' %}" id="profile-form">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="email">E-mail</label>
+                <input type="email" class="form-control" id="email" name="email" value="{{ user.email }}" required aria-describedby="emailHelp">
+                <small id="emailHelp" class="form-text text-muted">Nós não compartilhamos suas informações com ninguém.</small>
+            </div>
+            <button type="submit" name="update_email" class="btn btn-primary">Atualizar E-mail</button>
+            <button type="button" class="btn btn-secondary" onclick="window.location.href='{% url 'settings' %}'">Cancelar</button>
+        </form>
+
+        <!-- Test Email Form -->
+        <h3>Teste de E-mail</h3>
+        <form method="post" action="{% url 'settings' %}">
+            {% csrf_token %}
+            <button type="submit" name="send_test_email" class="btn btn-info">Enviar e-mail teste</button>
+        </form>
+    </div>
+
+    <!-- Account Settings -->
+    <div id="account-settings">
+        <h3>Conta</h3>
+        <form method="post" action="{% url 'password_change' %}">
+            {% csrf_token %}
+            <button type="submit" name="change_password" class="btn btn-change-password">Alterar Senha</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.getElementById('profile-form').addEventListener('submit', function() {
+        const submitButton = this.querySelector('button[type="submit"]');
+        submitButton.innerHTML = 'Atualizando...';
+        submitButton.disabled = true;
+    });
+</script>
+{% endblock %}
