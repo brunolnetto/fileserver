@@ -47,5 +47,7 @@ urlpatterns = [
     path('api/', include('api.urls')),
     path('', include('web.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) \
-    + swagger_urlpatterns
+    + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT) \
+        + swagger_urlpatterns \
+        
 

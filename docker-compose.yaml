@@ -76,18 +76,20 @@ services:
 
   celery-flower:
     image: mher/flower
+    container_name: flower
+    environment:
+      - CELERY_BROKER_URL=${CELERY_BROKER_URL}
+      - FLOWER_PORT=8888
     ports:
-      - "5555:5555"
-    depends_on:
-      - celery-worker
-      - redis
-    networks:
-      - default
-  
+    - 8888:8888
+    volumes:
+    - flower_data:/data
 
 volumes:
   static_volume:
   postgres_data:
+  flower_data:
 
 networks:
   default:
+    driver: bridge
