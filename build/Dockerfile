@@ -19,7 +19,11 @@ RUN apt-get update \
 
 
 # Requirements are installed here to ensure they will be cached.
+RUN mkdir /app
+WORKDIR /app
+
 COPY ./requirements.txt /requirements.txt
+COPY ./.env /.env
 RUN pip install -r /requirements.txt
 
 # Requirements are installed here to ensure they will be cached.
