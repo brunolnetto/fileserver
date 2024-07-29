@@ -87,7 +87,7 @@ restart: ## Restart the application. Usage: make restart
 	docker-compose restart 
 
 up: ## Up the application. Usage: make up
-	docker-compose up --build -d
+	docker-compose up --build --remove-orphans -d
 
 pid: ## Show container pid. Usage: make pid
 	docker inspect --format '{{.State.Pid}}' ${container}
