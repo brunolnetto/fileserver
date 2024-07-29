@@ -1,6 +1,6 @@
 services:
   db:
-    image: postgres
+    image: postgres:14
     restart: always
     ports: 
       - "${DATABASE_PORT}:5432"
@@ -11,12 +11,16 @@ services:
       POSTGRES_DB: ${DATABASE_NAME}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - default
 
   redis:
     restart: unless-stopped
     image: redis:7.0.5-alpine 
     ports: 
       - "6379:6379"
+    networks:
+      - default
 
   web:
     restart: unless-stopped
@@ -35,6 +39,8 @@ services:
     depends_on:
       - db
       - redis
+    networks:
+      - default
 
   celery-worker:
     build:
@@ -49,6 +55,8 @@ services:
     depends_on:
       - db
       - redis
+    networks:
+      - default
 
   celery-beat:
     build:
@@ -63,18 +71,23 @@ services:
     depends_on:
       - db
       - redis
+    networks:
+      - default
 
   celery-flower:
     image: mher/flower
     ports:
       - "5555:5555"
-    command:
-      - /start-celery-flower.sh
     depends_on:
       - celery-worker
       - redis
+    networks:
+      - default
   
 
 volumes:
   static_volume:
   postgres_data:
+
+networks:
+  default:
