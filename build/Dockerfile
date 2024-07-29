@@ -42,6 +42,6 @@ COPY ./build/celery/start-celery-beat.sh /start-celery-beat.sh
 RUN sed -i 's/\r$//g' /start-celery-beat.sh
 RUN chmod +x /start-celery-beat.sh
 
-COPY ./build/celery/start-flower.sh /start-flower.sh
-RUN sed -i 's/\r$//g' /start-flower.sh
-RUN chmod +x /start-flower.sh
+COPY ./build/celery/start-celery-flower.sh /start-celery-flower.sh
+RUN sed -i 's/\r$//g' /start-celery-flower.sh
+RUN chmod +x /start-celery-flower.sh
