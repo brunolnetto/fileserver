@@ -81,7 +81,10 @@ build: ## Build the application. Usage: make build
 	docker-compose build --no-cache
 
 down: ## Down the application. Usage: make down
-	docker-compose down -v
+	docker-compose down
+
+rm-volume: ## Remove a volume. Usage: make rm-volume volume=your_volume_name
+	docker volume rm ${volume}
 
 up: ## Up the application. Usage: make up
 	docker-compose up --build --remove-orphans -d
