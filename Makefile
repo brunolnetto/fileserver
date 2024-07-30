@@ -91,6 +91,9 @@ restart: down up ## Restart the application. Usage: make restart
 pid: ## Show container pid. Usage: make pid
 	docker inspect --format '{{.State.Pid}}' ${container}
 
+ip: ## Show container ip. Usage: make ip
+	docker inspect --format '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${container}
+
 kill: ## Kill a container. Usage: make kill container_name=your_container_name
 	docker inspect --format '{{.State.Pid}}' ${container} | xargs -I {} sudo kill {}
 
