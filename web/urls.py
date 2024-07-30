@@ -1,17 +1,15 @@
-from django.urls import path, include 
+from django.urls import path 
 from django.conf.urls import handler400, handler403, handler404, handler500
-from django.http import HttpResponseNotFound
 from django.contrib.auth import views as auth_views
 0
 from .views import (
-    home_view, table_view, update_data, delete_selected_files_view, confirm_email,
+    home_view, table_view, update_data, confirm_email,
     upload_files_view, update_uploaded_files_view, upload_success_view, upload_status_view, 
     delete_selected_files_view, signup_view, login_view, logout_view, settings_view, 
-    check_availability, check_email, check_username, login_required_view, update_first_login_flag,
+    check_email, check_username, login_required_view, update_first_login_flag,
 )
 from .views import send_test_email
 from .views import CustomPasswordResetView
-from django.conf.urls import handler400, handler403, handler404, handler500
 
 handler400 = 'web.views.custom_bad_request'
 handler403 = 'web.views.custom_permission_denied'

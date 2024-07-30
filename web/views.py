@@ -1,6 +1,5 @@
 # views.py
 from django.shortcuts import render, redirect
-from django.shortcuts import get_object_or_404
 
 from django.core.paginator import Paginator
 
@@ -8,51 +7,37 @@ from django.core.validators import validate_email
 from django.core.mail import BadHeaderError
 
 from django.views.decorators.http import require_POST
-from django.views.decorators.csrf import csrf_protect, csrf_exempt
+from django.views.decorators.csrf import csrf_exempt
 
 from django.http import (
     JsonResponse, 
-    HttpResponseBadRequest, 
-    HttpResponse, 
-    HttpResponseForbidden,
+    HttpResponse,
 )
 
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.forms import UserChangeForm, UserCreationForm, AuthenticationForm
-from django.contrib.auth.decorators import login_required
 from django.contrib.auth import login, authenticate
-from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import logout
 from django.contrib.auth.models import User
 from django.contrib import messages
-from django.contrib.auth import get_user_model
-from django.contrib.auth.tokens import default_token_generator
-from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.views import PasswordResetView
-from django.contrib.sites.shortcuts import get_current_site
 
-from django.utils.html import strip_tags
-from django.utils.encoding import force_str, force_bytes
-from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 
-from django.template.loader import render_to_string
 
 from django.core.mail import send_mail
-from django.core.exceptions import ObjectDoesNotExist, ValidationError
+from django.core.exceptions import ValidationError
 
-from django.http import HttpResponseForbidden
 
 from django.conf import settings
 from django.apps import apps
 from django.db.models import IntegerField,  DateField, DateTimeField
-from shutil import rmtree
 import logging
 import json
 import os
 
 from .tasks import send_confirmation_email_task
-from .forms import CustomPasswordResetForm, UploadForm, UserProfileForm
+from .forms import CustomPasswordResetForm
 from .utils import custom_error_response
-from .models import Upload, EmailQueue
+from .models import Upload
 from .constants import DEFAULT_PAGE_SIZE
 
 # Get the logger
@@ -222,12 +207,6 @@ class CustomPasswordResetView(PasswordResetView):
     template_name = 'registration/password_reset_form.html'
 
 def home_view(request):
-    context = {
-        'user': request.user,
-    }
-    context = {
-        'user': request.user,
-    }
     return render(request, 'web/home.html')
 
 def login_view(request):
@@ -261,7 +240,7 @@ def login_required_view(request):
 def check_username(request):
     try:
         data = json.loads(request.body)
-        value = data.get(type)
+        data.get(type)
 
         data = json.loads(request.body)
         username = data.get('username', '')
@@ -333,10 +312,9 @@ def update_first_login_flag(request):
         user_profile.save()
         return JsonResponse({'status': 'success'})
 
-from django.contrib import messages
 from django.contrib.auth.hashers import make_password
 from .models import PendingRegistration
-from .utils import send_confirmation_email, generate_activation_token
+from .utils import generate_activation_token
 
 def signup_view(request):
     if request.method == 'POST':
@@ -349,9 +327,8 @@ def signup_view(request):
             messages.error(request, 'Senhas não coincidem.')
             return render(request, 'registration/signup.html')
 
-        pending_username_exists=PendingRegistration.objects.filter(pere_username=username).exists()
-        pending_email_exists=PendingRegistration.objects.filter(pere_email=email).exists()
-        duplicate_pending_exists=pending_username_exists or pending_email_exists
+        PendingRegistration.objects.filter(pere_username=username).exists()
+        PendingRegistration.objects.filter(pere_email=email).exists()
         
         activated_username_exists=User.objects.filter(username=username).exists()
         activated_email_exists=User.objects.filter(email=email).exists()
@@ -504,7 +481,7 @@ def upload_files_view(request):
     paginator = Paginator(files, 10)  # Number of files per page
 
     page_number = request.GET.get('page', 1)
-    page_obj = paginator.get_page(page_number)
+    paginator.get_page(page_number)
     
     # Render the upload page for GET request
     return render(request, 'web/upload.html')

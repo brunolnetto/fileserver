@@ -1,11 +1,10 @@
 from django.db.models import (
-    CASCADE, ForeignKey, OneToOneField, BooleanField, OneToOneField, 
+    CASCADE, ForeignKey, BooleanField, OneToOneField, 
     Model, FileField, DateTimeField, CharField, IntegerField
 )
 from django.contrib.auth.models import User
 from django.utils.translation import gettext_lazy as _
 from django.db import models
-from django.conf import settings
 import os
 
 class UserProfile(Model):

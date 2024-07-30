@@ -1,5 +1,4 @@
 from celery import shared_task
-import os
 
 # Read in 1 MB chunks
 CHUNKSIZE=1024 * 1024

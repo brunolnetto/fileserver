@@ -5,7 +5,6 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.conf import settings
 import os
-import uuid
 
 from web.models import Upload
 
@@ -34,7 +33,7 @@ class FileUploadAPIView(APIView):
                 for chunk in file.chunks():
                     destination.write(chunk)
                     uploaded_size += len(chunk)
-                    progress = (uploaded_size / total_size) * 100
+                    (uploaded_size / total_size) * 100
 
             # Save file information to the database
             Upload.objects.create(

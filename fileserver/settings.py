@@ -12,8 +12,6 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 import os
 from os import environ
 from dotenv import load_dotenv
-from django.utils.translation import gettext_lazy as _
-from pathlib import Path
 
 load_dotenv()
 

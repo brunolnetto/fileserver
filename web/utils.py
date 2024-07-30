@@ -1,9 +1,7 @@
 from django.http import JsonResponse
-from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 from django.core.mail import send_mail
-from django.core.mail import EmailMessage
 from django.conf import settings
 
 import secrets
