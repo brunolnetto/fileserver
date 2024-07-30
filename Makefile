@@ -52,7 +52,7 @@ run: ## Run the application. Usage: make run
 search: ## Searchs for a token in the code. Usage: make search token=your_token
 	grep -rnw . --exclude-dir=venv --exclude-dir=.git --exclude=poetry.lock -e "$(token)"
 
-sudo: ## 
+sudo: ## Create a superuser. Usage: make sudo
 	docker exec -it fileserver-web-1 python manage.py createsuperuser
 
 replace: ## Replaces a token in the code. Usage: make replace token=your_token
@@ -81,7 +81,7 @@ build: ## Build the application. Usage: make build
 	docker-compose build --no-cache
 
 down: ## Down the application. Usage: make down
-	docker-compose down
+	docker-compose down -v
 
 up: ## Up the application. Usage: make up
 	docker-compose up --build --remove-orphans -d
