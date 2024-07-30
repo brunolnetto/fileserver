@@ -30,10 +30,6 @@ RUN pip install -r /requirements.txt
 COPY ./requirements.txt /requirements.txt
 RUN pip install -r /requirements.txt
 
-COPY ./build/django/entrypoint-django.sh /entrypoint-django.sh
-RUN sed -i 's/\r$//g' /entrypoint-django.sh
-RUN chmod +x /entrypoint-django.sh
-
 COPY ./build/django/start-django.sh /start-django.sh
 RUN sed -i 's/\r$//g' /start-django.sh
 RUN chmod +x /start-django.sh

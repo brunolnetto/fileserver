@@ -9,7 +9,7 @@ fi
 cd /app
 
 # Wait for the database to be ready and then generate database migrations
-echo "Waiting for database to be ready..."
+echo "Generating database migrations..."
 until python manage.py makemigrations; do
   echo "Failed to generate migrations. Retrying..."
   sleep 2
