@@ -835,6 +835,29 @@ td, th {
     background-color: #5a6268; /* Darker grey on hover */
 }
 
+.forgot-password-link {
+    display: inline-block; /* Makes the link behave like a button */
+    padding: 10px 15px; /* Adds padding around the text */
+    margin-top: 10px; /* Adds space above the link */
+    text-decoration: none; /* Removes the default underline */
+    color: #007bff; /* Blue color for the text */
+    background-color: #f8f9fa; /* Light background for contrast */
+    border: 1px solid #007bff; /* Blue border */
+    border-radius: 5px; /* Rounded corners */
+    font-size: 14px; /* Adjust font size */
+    font-weight: bold; /* Make text bold */
+    text-align: center; /* Center align text */
+    transition: background-color 0.3s, color 0.3s; /* Smooth color transitions */
+}
+
+.forgot-password-link:hover,
+.forgot-password-link:focus {
+    background-color: #007bff; /* Darker blue background on hover */
+    color: #fff; /* White text on hover */
+    border-color: #0056b3; /* Darker blue border on hover */
+    outline: none; /* Remove default outline on focus */
+}
+
 .home-button {
     margin-bottom: 15px; /* Space between home button and other icons */
 }
@@ -948,11 +971,20 @@ html, body {
 }
 
 .footer {
-    position: relative;
-    margin-top: -60px; /* Adjust based on footer height */
+    position: fixed; /* or relative, based on your needs */
+    bottom: 0; /* Stick to the bottom of the viewport or container */
+    width: 100%; /* Ensure it spans the full width */
     height: 60px;
-    clear: both;
+    background-color: #f8f9fa; /* Light background for better visibility */
+    text-align: center; /* Center align text */
+    padding: 10px; /* Add padding for spacing inside the footer */
+    border-top: 1px solid #dee2e6; /* Optional: add a top border for separation */
+    box-shadow: 0 -1px 5px rgba(0, 0, 0, 0.1); /* Optional: add subtle shadow */
 }
 
-
+.footer p {
+    margin: 0; /* Remove default margin from p tag */
+    font-size: 14px; /* Adjust font size for readability */
+    color: #6c757d; /* Darker gray color for the text */
+}
 
