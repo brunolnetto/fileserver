@@ -105,6 +105,7 @@
     let usernameDelayTimer;
     let emailDelayTimer;
     let validationMessages = document.getElementById('validation-messages');
+    const signupButton = document.querySelector('#signup-form button[type="submit"]');
 
     // Function to clear placeholder on focus
     function clearPlaceholder(element) {
@@ -119,7 +120,6 @@
         }
     }
 
-    // Toggle password visibility
     // Toggle password visibility
     function togglePasswordVisibility(toggleButtonId, passwordFieldId) {
         document.getElementById(toggleButtonId).addEventListener('click', function() {
@@ -152,6 +152,18 @@
         validationMessages.appendChild(listItem);
     }
 
+    function clearValidationMessages() {
+        validationMessages.innerHTML = ''; // Clear all messages
+    }
+
+    function enableSignupButton() {
+        signupButton.disabled = false;
+    }
+
+    function disableSignupButton() {
+        signupButton.disabled = true;
+    }
+
     // Check availability of username or email
     function checkAvailability(type, value, feedbackElement, loadingElement, iconElement) {
         clearTimeout(type === 'username' ? usernameDelayTimer : emailDelayTimer);
@@ -167,16 +179,19 @@
                     body: JSON.stringify({ [type]: value })
                 })
                 .then(response => {
-                    console.log(`Response Status for ${type}:`, response.status); // Log the response status
+                    // Log the response status
+                    console.log(`Response Status for ${type}:`, response.status); 
                     return response.json();
                 })
                 .then(data => {
-                    console.log(`Response Data for ${type}:`, data); // Log the response data
+                    // Log the response data
+                    console.log(`Response Data for ${type}:`, data); 
                     const isAvailable = !data.exists;
                     displayAvailability(type, isAvailable, feedbackElement, loadingElement, iconElement);
                 })
                 .catch((error) => {
-                    console.error(`Fetch Error for ${type}:`, error); // Log fetch errors
+                    // Log fetch errors
+                    console.error(`Fetch Error for ${type}:`, error);
                     displayAvailability(type, false, feedbackElement, loadingElement, iconElement, 'Erro ao checar disponibilidade.');
                 });
             }, 250);
@@ -207,6 +222,48 @@
         }
     }
 
+    // Validate the form fields and enable/disable the signup button
+    function validateForm() {
+        const username = document.getElementById('username').value.trim();
+        const email = document.getElementById('email').value.trim();
+        const password1 = document.getElementById('password1').value;
+        const password2 = document.getElementById('password2').value;
+
+        let valid = true;
+
+        // Check username
+        if (validateUsername(username)) {
+            if (document.getElementById('username-feedback').textContent.includes('já existe') ||
+                document.getElementById('username-feedback').textContent.includes('inválido')) {
+                valid = false;
+            }
+        } else {
+            valid = false;
+        }
+
+        // Check email
+        if (validateEmail(email)) {
+            if (document.getElementById('email-feedback').textContent.includes('inválido') ||
+                document.getElementById('email-feedback').textContent.includes('já existe')) {
+                valid = false;
+            }
+        } else {
+            valid = false;
+        }
+
+        // Check if passwords match
+        if (password1 !== password2) {
+            addValidationMessage('Senhas não coincidem.');
+            valid = false;
+        }
+
+        if (valid) {
+            enableSignupButton();
+        } else {
+            disableSignupButton();
+        }
+    }
+
     // Initialize event listeners
     document.addEventListener('DOMContentLoaded', () => {
         const usernameInput = document.getElementById('username');
@@ -218,27 +275,31 @@
         const emailFeedback = document.getElementById('email-feedback');
         const emailLoading = document.getElementById('email-loading');
         const emailIcon = document.getElementById('email-icon-element');
-        const emailError = document.getElementById('email-error');
+
+        // Disable signup button initially
+        disableSignupButton();
 
         usernameInput.addEventListener('input', function() {
             const username = this.value.trim();
-            validationMessages.innerHTML = ''; // Clear previous messages
+            clearValidationMessages(); // Clear previous messages
             if (validateUsername(username)) {
                 checkAvailability('username', username, usernameIcon);
             } else {
                 addValidationMessage('Nome de usuário inválido. Deve ter 5-20 caracteres e pode conter letras, números, underscores e hífens.');
                 usernameIcon.className = 'bi bi-x-circle'; // Error icon
+                validateForm();
             }
         });
-    
+
         emailInput.addEventListener('input', function() {
             const email = this.value.trim();
-            validationMessages.innerHTML = ''; // Clear previous messages
+            clearValidationMessages(); // Clear previous messages
             if (validateEmail(email)) {
                 checkAvailability('email', email, emailIcon);
             } else {
                 addValidationMessage('E-mail inválido.');
                 emailIcon.className = 'bi bi-x-circle'; // Error icon
+                validateForm();
             }
         });
 
@@ -256,10 +317,11 @@
             }
 
             // Check username and email errors
+            const usernameError = document.getElementById('username-feedback').textContent;
             const emailError = document.getElementById('email-feedback').textContent;
 
-            if (usernameFeedback.includes('já existe') || usernameFeedback.includes('inválido')) {
-                addValidationMessage(usernameFeedback);
+            if (usernameError.includes('já existe') || usernameError.includes('inválido')) {
+                addValidationMessage(usernameError);
                 valid = false;
             }
 

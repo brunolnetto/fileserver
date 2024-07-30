@@ -154,7 +154,7 @@
                     currentSortField = field;
                     currentSortOrder = 'asc';
                 }
-    
+        
                 sortTable(field, currentSortOrder);
                 updateSortIndicators();
             });
@@ -199,7 +199,7 @@
                     cell.contentEditable = isEditing;
                     cell.classList.toggle('editable-mode', isEditing);
                 });
-    
+        
                 const icon = this.querySelector('i');
                 if (isEditing) {
                     icon.classList.replace('bi-pencil', 'bi-save');
@@ -224,7 +224,7 @@
                     cells.forEach(cell => {
                         const fieldName = cell.getAttribute('data-field');
                         const fieldValue = cell.textContent.trim();
-    
+        
                         if (fieldName) {
                             data[fieldName] = fieldValue;
                         }
