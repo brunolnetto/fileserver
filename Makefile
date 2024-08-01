@@ -2,6 +2,12 @@
 
 OMIT_PATHS := "*/__init__.py,backend/tests/*"
 
+# Define the default number of workers
+NUM_WORKERS ?= 3
+
+# Path to Python script
+PYTHON_SCRIPT = generate_docker_compose.py
+
 define PRINT_HELP_PYSCRIPT
 import re, sys
 
@@ -88,6 +94,10 @@ rm-volume: ## Remove a volume. Usage: make rm-volume volume=your_volume_name
 
 up: ## Up the application. Usage: make up
 	docker-compose up --build --remove-orphans -d
+
+# Target to generate Docker Compose file
+generate:
+	python3 $(PYTHON_SCRIPT) $(NUM_WORKERS)
 
 restart: down up ## Restart the application. Usage: make restart
 
