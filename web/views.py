@@ -43,14 +43,6 @@ from .constants import DEFAULT_PAGE_SIZE
 # Get the logger
 logger = logging.getLogger('django')
 
-def get_field_type(field):
-    if isinstance(field, IntegerField):
-        return 'number'
-    elif isinstance(field, DateField) or \
-        isinstance(field, DateTimeField):
-        return 'date'
-    else:
-        return 'string'
 
 def custom_csrf_failure_view(request, reason=""):
     return render(request, 'status_codes/403.html', {

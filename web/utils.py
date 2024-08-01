@@ -1,4 +1,6 @@
 from django.http import JsonResponse
+from django.db.models import IntegerField,  DateField, DateTimeField
+from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 from django.core.mail import send_mail
@@ -42,3 +44,11 @@ def send_confirmation_email(pending_registration):
         print(f"Erro ao enviar e-mail: {e}")
         raise
 
+def get_field_type(field):
+    if isinstance(field, IntegerField):
+        return 'number'
+    elif isinstance(field, DateField) or \
+        isinstance(field, DateTimeField):
+        return 'date'
+    else:
+        return 'string'
