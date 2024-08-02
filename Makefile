@@ -25,7 +25,7 @@ export PRINT_HELP_PYSCRIPT
 include .env
 
 help:
-	@python -c "$$PRINT_HELP_PYSCRIPT" < $(MAKEFILE_LIST)
+	@python3 -c "$$PRINT_HELP_PYSCRIPT" < $(MAKEFILE_LIST)
 
 clean-logs: # Removes log info. Usage: make clean-logs
 	rm -fr dist/ .eggs/
