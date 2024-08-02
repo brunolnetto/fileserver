@@ -165,34 +165,41 @@
     }
 
     // Check availability of username or email
-    function checkAvailability(type, value, feedbackElement, loadingElement, iconElement) {
+    function checkAvailability(type, value, feedbackElement, iconElement) {
+        console.log('iconElement')
+        console.log(iconElement)
         clearTimeout(type === 'username' ? usernameDelayTimer : emailDelayTimer);
 
         if (value) {
+            var username = value;
+            var csrf_token = document.querySelector('input[name="csrfmiddlewaretoken"]').value;
+            console.log(iconElement)
             const delayTimer = setTimeout(() => {
                 fetch(`/check-${type}/`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-CSRFToken': document.querySelector('input[name="csrfmiddlewaretoken"]').value
+                        'X-CSRFToken': csrf_token
                     },
                     body: JSON.stringify({ [type]: value })
                 })
                 .then(response => {
                     // Log the response status
-                    console.log(`Response Status for ${type}:`, response.status); 
+                    console.log(`Response Status for ${type} ${username}:`, response.status); 
                     return response.json();
                 })
                 .then(data => {
                     // Log the response data
                     console.log(`Response Data for ${type}:`, data); 
                     const isAvailable = !data.exists;
-                    displayAvailability(type, isAvailable, feedbackElement, loadingElement, iconElement);
+                    console.log(`${type} ${username} is available:`, isAvailable);
+                    console.log(iconElement)
+                    displayAvailability(type, isAvailable, feedbackElement, iconElement);
                 })
                 .catch((error) => {
                     // Log fetch errors
                     console.error(`Fetch Error for ${type}:`, error);
-                    displayAvailability(type, false, feedbackElement, loadingElement, iconElement, 'Erro ao checar disponibilidade.');
+                    displayAvailability(type, false, feedbackElement, iconElement, 'Erro ao checar disponibilidade.');
                 });
             }, 250);
 
@@ -215,6 +222,7 @@
             addValidationMessage(errorMessage)
             iconElement.className = 'bi bi-x-circle'; // Error icon
         } else if (isAvailable) {
+            console.log(iconElement)
             iconElement.className = 'bi bi-check-circle'; // Check icon
         } else {
             addValidationMessage(`${type === 'username' ? 'Usuário' : 'E-mail'} já existe.`);
@@ -282,6 +290,7 @@
         usernameInput.addEventListener('input', function() {
             const username = this.value.trim();
             clearValidationMessages(); // Clear previous messages
+
             if (validateUsername(username)) {
                 checkAvailability('username', username, usernameIcon);
             } else {
