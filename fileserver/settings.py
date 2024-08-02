@@ -109,6 +109,7 @@ MIDDLEWARE = [
     'django.middleware.gzip.GZipMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'web.middleware.MinifyHtmlMiddleware',
 ]
 
 AUTHENTICATION_BACKENDS = [
