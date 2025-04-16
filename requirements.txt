@@ -3,7 +3,7 @@ channels==4.2.2
 drf-yasg==1.21.10
 Django==5.2
 djangorestframework==3.16.0
-django-celery-beat==2.7.0
+django-celery-beat==2.8.0
 flower==2.0.1
 gunicorn==23.0.0
 python-dotenv==1.1.0
